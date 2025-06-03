@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rain Forecast Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; width: 100vw; }
+    .leaflet-popup-content { font-size: 1.1em; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Initialize map
+    const map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // On map click, fetch rain forecast
+    map.on('click', async function(e) {
+      const { lat, lng } = e.latlng;
+      const marker = L.marker([lat, lng]).addTo(map);
+      marker.bindPopup('Loading rain forecast...').openPopup();
+      try {
+        const res = await fetch(`/api/weather/${lat}/${lng}`);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        const timelines = data.data?.timelines?.hourly || [];
+        // Find next 6 hours with rain
+        const rainHours = timelines.filter(t => {
+          const prob = t.values?.precipitationProbability || 0;
+          const type = t.values?.precipitationType || 0;
+          return prob >= 50 && type === 1;
+        });
+        let msg = '';
+        if (rainHours.length > 0) {
+          msg = `<b>Rain predicted soon!</b><br>\n` +
+            rainHours.slice(0, 3).map(t => {
+              const time = new Date(t.time).toLocaleString();
+              const prob = t.values.precipitationProbability;
+              return `${time}: ${prob}% chance`;
+            }).join('<br>');
+        } else {
+          msg = 'No significant rain predicted in the next 24 hours.';
+        }
+        marker.setPopupContent(msg);
+      } catch (err) {
+        marker.setPopupContent('Failed to fetch forecast.');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
+  ],
+  "env": {
+    "TOMORROW_API_KEY_1": "@tomorrow-api-key-1",
+    "TOMORROW_API_KEY_2": "@tomorrow-api-key-2"
+  }
+}
