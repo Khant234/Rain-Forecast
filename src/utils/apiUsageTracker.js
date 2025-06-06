@@ -176,3 +176,18 @@ export const apiTracker = new APIUsageTracker();
 if (typeof window !== 'undefined') {
   window.apiTracker = apiTracker;
 }
+
+// Wrapper functions for easy import
+const trackApiCall = () => {
+  return apiTracker.trackCall();
+};
+
+const getApiUsage = () => {
+  return apiTracker.getReport();
+};
+
+const logApiUsage = () => {
+  apiTracker.displayUsage();
+};
+
+export { trackApiCall, getApiUsage, logApiUsage };

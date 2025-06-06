@@ -1,6 +1,5 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
 const HourlyTimeline = ({ data, language, darkMode }) => {
   const scrollRef = React.useRef(null);
 

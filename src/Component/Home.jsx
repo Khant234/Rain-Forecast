@@ -10,7 +10,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { getWeatherData } from "../services/weatherService";
-// test comment
+import HourlyTimeline from './HourlyTimeline'; // Assuming this is already created
+
 function Home() {
   const [loading, setLoading] = useState(true);
 
@@ -416,7 +417,7 @@ function Home() {
               <div className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{weatherData?.rainChance}%</div>
             </div>
           </div>
-                  </div>
+        </div>
         <div className={`text-center text-xs sm:text-sm md:text-base ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "မြန်မာနိုင်ငံ မိုးလေဝသ အချက်အလက်" : "Myanmar Weather Information"}</div>
       </div>
     </div>

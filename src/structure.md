@@ -1,6 +1,6 @@
-# Project Structure: Next.js Weather App
+# React Weather App: Project Structure
 
-This document outlines the pages and data models for the Next.js frontend of the weather application.
+This document outlines the pages and data models for the React frontend of the weather application.
 
 ## Pages
 
@@ -16,11 +16,11 @@ The main landing page of the application.
     - `WeeklyForecast`: A list showing the forecast for the next 7 days.
     - `Header`: Contains navigation, settings icon, and maybe the current location name.
 
-### 2. Location Details Page (`/location/[city]`)
+### 2. Location Details Page (`/location/:city`)
 
 A page to display detailed weather information for a specific location.
 
-- **URL**: `/location/[city]` (e.g., `/location/yangon`)
+- **URL**: `/location/:city` (e.g., `/location/yangon`)
 - **Functionality**: This page will be similar to the Home Page but will be dedicated to a specific city passed in the URL. This is useful for sharing and bookmarking.
 
 ### 3. Settings Page (`/settings`)

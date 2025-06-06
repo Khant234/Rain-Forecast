@@ -81,14 +81,14 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
   if (!timeToRain || !rainDuration) {
     return (
       <div
-        className={`text-center p-4 rounded-lg ${
+        className={`text-center p-3 sm:p-4 rounded-lg ${
           darkMode ? "bg-gray-800/50 text-white" : "bg-white/50 text-gray-800"
         } backdrop-blur-sm`}
       >
-        <div className="text-lg font-bold mb-2">
+        <div className="text-base sm:text-lg font-bold mb-1.5 sm:mb-2">
           {language === "mm" ? "မိုးရွာခြင်း" : "Rain Status"}
         </div>
-        <div className="text-sm">
+        <div className="text-xs sm:text-sm">
           {language === "mm"
             ? "လတ်တလော မိုးရွာဖွယ်မရှိပါ"
             : "No rain expected soon"}
@@ -99,25 +99,25 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
 
   return (
     <div
-      className={`text-center p-4 rounded-lg ${
+      className={`text-center p-3 sm:p-4 rounded-lg ${
         darkMode ? "bg-gray-800/50 text-white" : "bg-white/50 text-gray-800"
       } backdrop-blur-sm`}
     >
-      <div className="text-lg font-bold mb-4">
+      <div className="text-base sm:text-lg font-bold mb-3 sm:mb-4">
         {language === "mm" ? "မိုးရွာရန်ကျန်ချိန်" : "Time until Rain"}
       </div>
 
-      <div className="flex items-center justify-center space-x-2 mb-4">
+      <div className="flex items-center justify-center space-x-1.5 sm:space-x-2 mb-3 sm:mb-4">
         <Clock
-          className={`w-5 h-5 ${
+          className={`w-4 h-4 sm:w-5 sm:h-5 ${
             darkMode ? "text-yellow-300" : "text-blue-600"
           }`}
         />
-        <span className="text-2xl font-mono">{formatTime(timeToRain)}</span>
+        <span className="text-xl sm:text-2xl font-mono">{formatTime(timeToRain)}</span>
       </div>
 
       <div
-        className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+        className={`text-xs sm:text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
       >
         {language === "mm"
           ? `ခန့်မှန်းကြာချိန်: ${formatTime(rainDuration)}`

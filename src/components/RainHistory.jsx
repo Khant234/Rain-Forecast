@@ -36,12 +36,12 @@ const RainHistory = ({ language, darkMode }) => {
     if (active && payload && payload.length) {
       return (
         <div
-          className={`p-2 rounded-lg shadow-lg ${
+          className={`p-1.5 sm:p-2 rounded-lg shadow-lg ${
             darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
           }`}
         >
-          <p className="font-medium">{label}</p>
-          <p className="text-sm">
+          <p className="font-medium text-xs sm:text-sm">{label}</p>
+          <p className="text-[10px] sm:text-xs">
             {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Probability"}:{" "}
             {Math.round(payload[0].value)}%
           </p>
@@ -53,32 +53,34 @@ const RainHistory = ({ language, darkMode }) => {
 
   return (
     <div
-      className={`w-full p-4 rounded-lg ${
+      className={`w-full p-3 sm:p-4 rounded-lg ${
         darkMode ? "bg-gray-800/50" : "bg-white/50"
       } backdrop-blur-sm`}
     >
       <h3
-        className={`text-lg font-bold mb-4 ${
+        className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${
           darkMode ? "text-white" : "text-gray-800"
         }`}
       >
         {language === "mm" ? "မိုးရွာသွန်းမှု မှတ်တမ်း" : "Rain History"}
       </h3>
 
-      <div className="h-64 w-full">
+      <div className="h-48 sm:h-56 md:h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+            margin={{ top: 10, right: 5, left: -10, bottom: 10 }}
           >
             <XAxis
               dataKey="date"
               stroke={darkMode ? "#ffffff50" : "#00000050"}
-              fontSize={12}
+              fontSize={10}
+              tick={{ fontSize: 10 }}
             />
             <YAxis
               stroke={darkMode ? "#ffffff50" : "#00000050"}
-              fontSize={12}
+              fontSize={10}
+              tick={{ fontSize: 10 }}
               tickFormatter={(value) => `${value}%`}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -92,7 +94,7 @@ const RainHistory = ({ language, darkMode }) => {
       </div>
 
       <div
-        className={`text-xs mt-4 ${
+        className={`text-[10px] sm:text-xs mt-3 sm:mt-4 ${
           darkMode ? "text-gray-400" : "text-gray-600"
         }`}
       >

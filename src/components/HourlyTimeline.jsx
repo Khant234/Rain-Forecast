@@ -1,21 +1,19 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const HourlyTimeline = ({ data, language, darkMode }) => {
+const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
   const scrollRef = React.useRef(null);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -200 : 200;
+      const scrollAmount = direction === "left" ? -150 : 150;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
 
-  if (!data?.hourlyData?.data?.timelines?.[0]?.intervals) {
-    return null;
+  if (!hourlyData || hourlyData.length === 0) {
+    return null; // Don't render if there's no data
   }
-
-  const intervals = data.hourlyData.data.timelines[0].intervals;
 
   const getWeatherEmoji = (interval) => {
     const { precipitationType, precipitationProbability } = interval.values;
@@ -29,7 +27,6 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
     return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       hour12: true,
-      timeZone: "Asia/Yangon",
     });
   };
 
@@ -37,46 +34,46 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
     <div className="relative w-full">
       <button
         onClick={() => scroll("left")}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full 
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-0.5 sm:p-1 rounded-full 
           ${
             darkMode ? "bg-gray-800 text-yellow-300" : "bg-white text-blue-600"
           } 
           shadow-lg hover:scale-110 transition-transform`}
         aria-label="Scroll left"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
       <div
         ref={scrollRef}
-        className="overflow-x-auto hide-scrollbar flex space-x-4 px-8 py-4"
+        className="overflow-x-auto hide-scrollbar flex space-x-2 sm:space-x-3 md:space-x-4 px-6 sm:px-8 py-3 sm:py-4"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {intervals.map((interval, index) => (
+        {hourlyData.map((interval) => (
           <div
             key={interval.startTime}
-            className={`flex-shrink-0 w-24 p-3 rounded-lg ${
+            className={`flex-shrink-0 w-20 sm:w-24 p-2 sm:p-3 rounded-lg ${
               darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
             } shadow-md transition-all duration-300 hover:scale-105 
               ${
                 interval.values.precipitationProbability > 50
                   ? darkMode
-                    ? "ring-2 ring-yellow-300"
-                    : "ring-2 ring-blue-500"
+                    ? "ring-1 sm:ring-2 ring-yellow-300"
+                    : "ring-1 sm:ring-2 ring-blue-500"
                   : ""
               }`}
             style={{ scrollSnapAlign: "start" }}
           >
-            <div className="text-center space-y-2">
-              <div className="text-sm font-medium">
+            <div className="text-center space-y-1 sm:space-y-2">
+              <div className="text-xs sm:text-sm font-medium">
                 {formatTime(interval.startTime)}
               </div>
-              <div className="text-2xl">{getWeatherEmoji(interval)}</div>
-              <div className="text-sm font-bold">
+              <div className="text-xl sm:text-2xl">{getWeatherEmoji(interval)}</div>
+              <div className="text-xs sm:text-sm font-bold">
                 {Math.round(interval.values.temperature)}°C
               </div>
               <div
-                className={`text-xs ${
+                className={`text-[10px] sm:text-xs ${
                   darkMode ? "text-gray-400" : "text-gray-500"
                 }`}
               >
@@ -91,14 +88,14 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
 
       <button
         onClick={() => scroll("right")}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1 rounded-full 
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-0.5 sm:p-1 rounded-full 
           ${
             darkMode ? "bg-gray-800 text-yellow-300" : "bg-white text-blue-600"
           } 
           shadow-lg hover:scale-110 transition-transform`}
         aria-label="Scroll right"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
       <style jsx>{`

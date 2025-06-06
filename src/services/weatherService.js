@@ -5,8 +5,17 @@ const PROXY_URL =
 const TOMORROW_API_KEY = import.meta.env.VITE_TOMORROW_API_KEY;
 const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
+const TOMORROW_IO_API_KEY = import.meta.env.VITE_TOMORROW_IO_API_KEY;
+const OPENCAGE_API_KEY = import.meta.env.VITE_OPENCAGE_API_KEY;
+
 if (!TOMORROW_API_KEY) {
-  throw new Error("VITE_TOMORROW_API_KEY is not defined in the environment.");
+  throw new Error("VITE_TOMORROW_API_KEY is not defined in the environment. Please add it to your .env.local file.");
+}
+if (!TOMORROW_IO_API_KEY) {
+  throw new Error("VITE_TOMORROW_IO_API_KEY is not defined. Please add it to your .env.local file.");
+}
+if (!OPENCAGE_API_KEY) {
+    throw new Error("VITE_OPENCAGE_API_KEY is not defined. Please add it to your .env.local file.");
 }
 
 // Import API tracker (only used for direct API calls)
@@ -390,84 +399,49 @@ const generateFallbackData = (lat, lon) => {
 };
 
 export const getWeatherData = async (lat, lon) => {
-  const now = Date.now();
+  const fields = [
+    "temperature", "temperatureApparent", "humidity", "windSpeed",
+    "windDirection", "weatherCode", "precipitationProbability", "precipitationType",
+    "pressureSurfaceLevel", "uvIndex", "visibility", "sunriseTime", "sunsetTime"
+  ];
+  const timesteps = ["1h", "1d"];
+  const units = "metric";
 
-  // Check cache first
-  if (weatherCache.data && now - weatherCache.timestamp < CACHE_DURATION) {
-    console.log("Returning cached weather data");
-    return weatherCache.data;
-  }
+  // The proxy server is set up to automatically handle the API key.
+  const proxyUrl = `/api/weather?lat=${lat}&lon=${lon}&fields=${fields.join(',')}&timesteps=${timesteps.join(',')}&units=${units}`;
 
   try {
-    // Add rate limiting before API calls
-    await rateLimit(0); // Start with first attempt
-
-    // Only fetch hourly data to reduce API calls
-    const hourlyData = await fetchHourlyData(lat, lon);
-
-    const data = {
-      minuteData: null, // No longer used
-      hourlyData,
-      timestamp: now,
-    };
-
-    // Update cache
-    weatherCache = {
-      data,
-      timestamp: now,
-    };
-
-    // Save to rain history
-    saveRainHistory(data);
-
-    // Reset rate limit delay on successful request
-    resetRateLimit();
-
-    return data;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      // The error will be handled by the component.
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+    return response.json();
   } catch (error) {
-    console.error("Error in getWeatherData:", error);
+    return null;
+  }
+};
 
-    // Check if it's a rate limit error
-    if (
-      error.message &&
-      (error.message.includes("rate limit") ||
-        error.message.includes("request limit") ||
-        error.message.includes("429"))
-    ) {
-      console.warn("API rate limit reached, using fallback data");
+export const geocodeCity = async (cityName) => {
+  const GEOCODING_API_URL = `https://api.opencagedata.com/geocode/v1/json`;
+  
+  // Note: The geocoding API is called directly from the client.
+  // This is generally safe for free-tier keys with usage limits.
+  const url = `${GEOCODING_API_URL}?q=${encodeURIComponent(cityName)}&key=${OPENCAGE_API_KEY}&limit=1&no_annotations=1`;
 
-      // Generate fallback data
-      const fallbackData = {
-        minuteData: null,
-        hourlyData: generateFallbackData(lat, lon),
-        timestamp: now,
-        isFallback: true,
-      };
-
-      // Cache the fallback data for a shorter duration (1 hour)
-      weatherCache = {
-        data: fallbackData,
-        timestamp: now,
-      };
-
-      return fallbackData;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Geocoding API call failed');
     }
-
-    // For other errors, try to use cached data
-    if (weatherCache.data) {
-      console.warn("Using stale cache data due to API error");
-      return weatherCache.data;
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      const { lat, lng } = data.results[0].geometry;
+      return { lat, lon: lng, name: data.results[0].formatted };
+    } else {
+      return null;
     }
-
-    // If no cache available, use fallback
-    console.warn("No cache available, using fallback data");
-    const fallbackData = {
-      minuteData: null,
-      hourlyData: generateFallbackData(lat, lon),
-      timestamp: now,
-      isFallback: true,
-    };
-
-    return fallbackData;
+  } catch (error) {
+    return null;
   }
 };
