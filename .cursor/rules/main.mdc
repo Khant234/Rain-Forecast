@@ -1,11 +1,5 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+description:
+globs:
+alwaysApply: false
 ---
-You need to follow the [implementation_plan.md](mdc:src/implementation_plan.md) one by one and complete a phase.If you have any question that is confusing then you can ask the user before starting the phase. Set the phase as in progress in the [implementation_plan.md](mdc:src/implementation_plan.md). Then commit to git locally. 
-
-
-
-
-The user will review and give feedback.When the user asks you to continue you need to come back to the [implementation_plan.md](mdc:src/implementation_plan.md), mark that phase as completed and then move on.

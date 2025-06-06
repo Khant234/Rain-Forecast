@@ -1,159 +1,114 @@
-# Project Structure
+# Project Structure: Next.js Weather App
+
+This document outlines the pages and data models for the Next.js frontend of the weather application.
 
 ## Pages
 
-### 1. Authentication Pages
+### 1. Home Page (`/`)
 
-- `/auth/login` - User login page
-- `/auth/register` - User registration page
-- `/auth/forgot-password` - Password recovery page
-- `/auth/reset-password` - Password reset page
+The main landing page of the application.
 
-### 2. Dashboard Pages
+- **URL**: `/`
+- **Components**:
+    - `SearchBar`: For finding new locations.
+    - `CurrentWeatherCard`: Displays the current weather conditions for the selected location.
+    - `HourlyTimeline`: Shows the weather forecast for the next 24 hours (reusing/refactoring the existing component).
+    - `WeeklyForecast`: A list showing the forecast for the next 7 days.
+    - `Header`: Contains navigation, settings icon, and maybe the current location name.
 
-- `/dashboard` - Main dashboard with overview
-- `/dashboard/profile` - User profile management
-- `/dashboard/settings` - User settings
+### 2. Location Details Page (`/location/[city]`)
 
-### 3. Content Pages
+A page to display detailed weather information for a specific location.
 
-- `/content/list` - List view of content
-- `/content/create` - Create new content
-- `/content/edit/:id` - Edit existing content
-- `/content/view/:id` - View content details
+- **URL**: `/location/[city]` (e.g., `/location/yangon`)
+- **Functionality**: This page will be similar to the Home Page but will be dedicated to a specific city passed in the URL. This is useful for sharing and bookmarking.
 
-### 4. Analytics Pages
+### 3. Settings Page (`/settings`)
 
-- `/analytics/overview` - Analytics dashboard
-- `/analytics/reports` - Detailed reports
-- `/analytics/export` - Export analytics data
+A page for users to customize their experience.
 
-### 5. Admin Pages
+- **URL**: `/settings`
+- **Components**:
+    - `UnitSelector`: Toggle between Celsius/Fahrenheit.
+    - `LanguageSelector`: Toggle between English and Burmese.
+    - `ThemeSwitcher`: Toggle between light and dark mode.
+    - `LocationManager`: Add, remove, and reorder saved locations.
 
-- `/admin/users` - User management
-- `/admin/roles` - Role management
-- `/admin/permissions` - Permission management
+## Data Models (Frontend)
 
-## Models
+These models define the structure of the data used within the React components.
 
-### 1. User Model
+### `CurrentWeather`
 
-```typescript
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status: "active" | "inactive";
-  createdAt: Date;
-  updatedAt: Date;
+```json
+{
+  "location": "Yangon, MM",
+  "temperature": 32,
+  "feelsLike": 38,
+  "condition": "Partly Cloudy",
+  "weatherCode": 1001,
+  "windSpeed": 10,
+  "windDirection": "SW",
+  "humidity": 75,
+  "pressure": 1012,
+  "visibility": 16,
+  "uvIndex": 8
 }
 ```
 
-### 2. Content Model
+### `HourlyForecast`
 
-```typescript
-interface Content {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  status: "draft" | "published" | "archived";
-  authorId: string;
-  createdAt: Date;
-  updatedAt: Date;
+Represents a single hour in the forecast. An array of these will be used for the hourly timeline.
+
+```json
+{
+  "time": "2023-10-27T14:00:00Z",
+  "temperature": 31,
+  "precipitationProbability": 20,
+  "weatherCode": 1001
 }
 ```
 
-### 3. Analytics Model
+### `DailyForecast`
 
-```typescript
-interface Analytics {
-  id: string;
-  metric: string;
-  value: number;
-  timestamp: Date;
-  category: string;
-  metadata: Record<string, any>;
+Represents a single day in the weekly forecast.
+
+```json
+{
+  "date": "2023-10-28",
+  "tempMax": 34,
+  "tempMin": 25,
+  "weatherCode": 1000,
+  "sunrise": "2023-10-28T06:05:00Z",
+  "sunset": "2023-10-28T17:35:00Z"
 }
 ```
 
-### 4. Role Model
+### `Location`
 
-```typescript
-interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
+Used for search results and saved locations.
+
+```json
+{
+  "name": "Yangon",
+  "lat": 16.8409,
+  "lon": 96.1735,
+  "country": "Myanmar"
 }
 ```
 
-## Components
+### `Settings`
 
-### 1. Common Components
+Represents the user's preferences, to be stored in local storage.
 
-- Button
-- Input
-- Select
-- Modal
-- Card
-- Table
-- Form
-- Alert
-- Loading
-- Pagination
-
-### 2. Layout Components
-
-- Header
-- Footer
-- Sidebar
-- Navigation
-- Breadcrumb
-
-### 3. Feature Components
-
-- UserCard
-- ContentCard
-- AnalyticsChart
-- SearchBar
-- FilterPanel
-- DataGrid
-
-## State Management
-
-- Redux for global state
-- React Context for theme and auth
-- Local state for component-specific data
-
-## Routing
-
-- React Router for navigation
-- Protected routes for authenticated pages
-- Role-based access control
-
-## Styling
-
-- Tailwind CSS for styling
-- Custom theme configuration
-- Responsive design
-- Dark/Light mode support
-
-## API Integration
-
-- Axios for HTTP requests
-- API interceptors
-- Error handling
-- Request/Response logging
-
-## Testing
-
-- Jest for unit testing
-- React Testing Library
-- Cypress for E2E testing
-- Test coverage reporting
+```json
+{
+  "units": "metric",
+  "language": "en",
+  "theme": "dark",
+  "locations": [
+    { "name": "Yangon", "lat": 16.8409, "lon": 96.1735, "country": "Myanmar" },
+    { "name": "Mandalay", "lat": 21.9588, "lon": 96.0891, "country": "Myanmar" }
+  ]
+}
+```
