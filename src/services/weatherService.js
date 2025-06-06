@@ -5,14 +5,18 @@ const PROXY_URL =
 const TOMORROW_API_KEY = import.meta.env.VITE_TOMORROW_API_KEY;
 const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
+console.log('Environment variables:', {
+  VITE_TOMORROW_API_KEY: import.meta.env.VITE_TOMORROW_API_KEY,
+  VITE_TOMORROW_IO_API_KEY: import.meta.env.VITE_TOMORROW_IO_API_KEY,
+  VITE_OPENCAGE_API_KEY: import.meta.env.VITE_OPENCAGE_API_KEY,
+  VITE_PROXY_URL: import.meta.env.VITE_PROXY_URL,
+});
+
 const TOMORROW_IO_API_KEY = import.meta.env.VITE_TOMORROW_IO_API_KEY;
 const OPENCAGE_API_KEY = import.meta.env.VITE_OPENCAGE_API_KEY;
 
 if (!TOMORROW_API_KEY) {
   throw new Error("VITE_TOMORROW_API_KEY is not defined in the environment. Please add it to your .env.local file.");
-}
-if (!TOMORROW_IO_API_KEY) {
-  throw new Error("VITE_TOMORROW_IO_API_KEY is not defined. Please add it to your .env.local file.");
 }
 if (!OPENCAGE_API_KEY) {
     throw new Error("VITE_OPENCAGE_API_KEY is not defined. Please add it to your .env.local file.");
@@ -406,27 +410,22 @@ export const getWeatherData = async (lat, lon) => {
   ];
   const timesteps = ["1h", "1d"];
   const units = "metric";
-
-  // The proxy server is set up to automatically handle the API key.
   const proxyUrl = `/api/weather?lat=${lat}&lon=${lon}&fields=${fields.join(',')}&timesteps=${timesteps.join(',')}&units=${units}`;
 
   try {
     const response = await fetch(proxyUrl);
     if (!response.ok) {
-      // The error will be handled by the component.
       throw new Error(`API call failed with status: ${response.status}`);
     }
     return response.json();
   } catch (error) {
+    console.error("Failed to fetch weather data via proxy:", error);
     return null;
   }
 };
 
 export const geocodeCity = async (cityName) => {
   const GEOCODING_API_URL = `https://api.opencagedata.com/geocode/v1/json`;
-  
-  // Note: The geocoding API is called directly from the client.
-  // This is generally safe for free-tier keys with usage limits.
   const url = `${GEOCODING_API_URL}?q=${encodeURIComponent(cityName)}&key=${OPENCAGE_API_KEY}&limit=1&no_annotations=1`;
 
   try {
@@ -438,10 +437,10 @@ export const geocodeCity = async (cityName) => {
     if (data.results && data.results.length > 0) {
       const { lat, lng } = data.results[0].geometry;
       return { lat, lon: lng, name: data.results[0].formatted };
-    } else {
-      return null;
     }
+    return null;
   } catch (error) {
+    console.error("Failed to geocode city:", error);
     return null;
   }
 };

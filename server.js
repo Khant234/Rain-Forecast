@@ -3,7 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-dotenv.config();
+// Configure dotenv to read from .env.local file
+dotenv.config({ path: '.env.local' });
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -44,7 +45,7 @@ app.get("/api/weather", async (req, res) => {
     }
 
     const TOMORROW_API_KEY =
-      process.env.TOMORROW_API_KEY
+      process.env.VITE_TOMORROW_API_KEY;
     const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
     const now = new Date();

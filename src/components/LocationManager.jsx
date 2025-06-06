@@ -2,12 +2,13 @@ import React, { useContext } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
 import { PlusCircle, XCircle } from 'lucide-react';
 
+const EPSILON = 0.0001; // A small tolerance for floating point comparison
+
 const LocationManager = ({ currentLocation, onSelectLocation }) => {
   const { settings, updateSettings } = useContext(SettingsContext);
   const { locations } = settings;
 
   const handleAddLocation = () => {
-    const EPSILON = 0.0001; // A small tolerance for floating point comparison
     // Prevent adding duplicates
     if (!locations.some(loc => Math.abs(loc.lat - currentLocation.lat) < EPSILON && Math.abs(loc.lon - currentLocation.lon) < EPSILON)) {
       const newLocations = [...locations, currentLocation];
@@ -16,7 +17,6 @@ const LocationManager = ({ currentLocation, onSelectLocation }) => {
   };
 
   const handleRemoveLocation = (locationToRemove) => {
-    const EPSILON = 0.0001;
     const newLocations = locations.filter(loc => 
         !(Math.abs(loc.lat - locationToRemove.lat) < EPSILON && Math.abs(loc.lon - locationToRemove.lon) < EPSILON)
     );
