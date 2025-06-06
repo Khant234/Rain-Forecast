@@ -14,6 +14,7 @@ const ThemeSwitcher = () => {
       <span className="font-semibold">Theme</span>
       <button
         onClick={toggleTheme}
+        aria-label={`Switch to ${settings.theme === 'dark' ? 'light' : 'dark'} mode`}
         className={`p-2 rounded-full transition-all ${
           settings.theme === 'dark'
             ? "bg-gray-800 text-yellow-400 hover:bg-gray-600"

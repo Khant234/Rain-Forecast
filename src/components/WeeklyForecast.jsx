@@ -18,6 +18,12 @@ const WeeklyForecast = ({ dailyData = [], darkMode }) => {
     return <Sun className="w-8 h-8 text-yellow-400" />;
   };
 
+  // Dynamically calculate the overall temperature range for the week for a more stable bar display
+  const allTemps = dailyData.flatMap(d => [d.values.temperatureMin, d.values.temperatureMax]);
+  const overallMin = Math.min(...allTemps);
+  const overallMax = Math.max(...allTemps);
+  const tempRange = Math.max(1, overallMax - overallMin); // Avoid division by zero
+
   return (
     <div className={`p-4 sm:p-6 rounded-xl shadow-lg transition-all duration-300 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
       <h3 className="text-lg font-bold mb-4">7-Day Forecast</h3>
@@ -33,8 +39,8 @@ const WeeklyForecast = ({ dailyData = [], darkMode }) => {
                 <div 
                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500" 
                     style={{ 
-                        width: `${((day.values.temperatureMax - day.values.temperatureMin) / 15) * 100}%`, 
-                        marginLeft: `${(day.values.temperatureMin - 20) / 15 * 100}%`
+                        marginLeft: `${Math.max(0, (day.values.temperatureMin - overallMin) / tempRange * 100)}%`,
+                        width: `${Math.min(100, (day.values.temperatureMax - day.values.temperatureMin) / tempRange * 100)}%`
                     }}
                 ></div>
             </div>

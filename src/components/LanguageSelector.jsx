@@ -1,35 +1,23 @@
 import React, { useContext } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
+import ToggleSelector from './ToggleSelector';
 
 const LanguageSelector = () => {
   const { settings, updateSettings } = useContext(SettingsContext);
 
-  const setLanguage = (language) => {
-    updateSettings({ language: language });
-  };
+  const languageOptions = [
+    { value: 'en', label: 'EN', ariaLabel: 'Set language to English' },
+    { value: 'mm', label: 'MM', ariaLabel: 'Set language to Burmese' },
+  ];
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
-      <span className="font-semibold">Language</span>
-      <div className="flex rounded-lg bg-gray-200 dark:bg-gray-800 p-1">
-        <button
-          onClick={() => setLanguage('en')}
-          className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
-            settings.language === 'en' ? 'bg-white dark:bg-gray-600' : ''
-          }`}
-        >
-          EN
-        </button>
-        <button
-          onClick={() => setLanguage('mm')}
-          className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
-            settings.language === 'mm' ? 'bg-white dark:bg-gray-600' : ''
-          }`}
-        >
-          MM
-        </button>
-      </div>
-    </div>
+    <ToggleSelector
+      label="Language"
+      options={languageOptions}
+      selectedValue={settings.language}
+      onSelect={(lang) => updateSettings({ language: lang })}
+      darkMode={settings.theme === 'dark'}
+    />
   );
 };
 

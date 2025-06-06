@@ -28,6 +28,7 @@ function Home() {
   const [dailyData, setDailyData] = useState([]);
   
   const [locationError, setLocationError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Function to convert weather code to condition description
   const getWeatherCondition = (weatherCode) => {
@@ -54,50 +55,59 @@ function Home() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchWeather = async () => {
       if (!location) return;
 
-      setApiLoading(true);
-      setLoading(true);
-      setLocationError(null);
+      if(isMounted) {
+        setApiLoading(true);
+        setLoading(true);
+        setLocationError(null);
+      }
       
       const data = await getWeatherData(location.lat, location.lon);
       
-      if (data && data.timelines) {
-        const { timelines } = data;
-        const current = timelines.daily[0].values;
+      if (isMounted) {
+        if (data && data.timelines) {
+          const { timelines } = data;
+          const current = timelines.daily[0].values;
+          
+          setCurrentWeather({
+            location: location.name,
+            temperature: current.temperatureAvg,
+            feelsLike: current.temperatureApparentAvg,
+            condition: getWeatherCondition(current.weatherCodeMax),
+            windSpeed: current.windSpeedAvg,
+            humidity: current.humidityAvg,
+            pressure: Math.round(current.pressureSurfaceLevelAvg),
+            uvIndex: Math.round(current.uvIndexMax),
+          });
+
+          setHourlyData(timelines.hourly);
+          setDailyData(timelines.daily);
+
+        } else {
+          setLocationError("Could not fetch weather data. Please try again.");
+          setCurrentWeather(null);
+          setHourlyData([]);
+          setDailyData([]);
+        }
         
-        setCurrentWeather({
-          location: location.name,
-          temperature: current.temperatureAvg,
-          feelsLike: current.temperatureApparentAvg,
-          condition: getWeatherCondition(current.weatherCodeMax),
-          windSpeed: current.windSpeedAvg,
-          humidity: current.humidityAvg,
-          pressure: Math.round(current.pressureSurfaceLevelAvg),
-          uvIndex: Math.round(current.uvIndexMax),
-        });
-
-        setHourlyData(timelines.hourly);
-        setDailyData(timelines.daily);
-
-      } else {
-        setLocationError("Could not fetch weather data. Please try again.");
-        setCurrentWeather(null);
-        setHourlyData([]);
-        setDailyData([]);
+        setApiLoading(false);
+        setLoading(false);
       }
-      
-      setApiLoading(false);
-      setLoading(false);
     };
 
     fetchWeather();
-  }, [location]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location, refreshTrigger]);
 
   const handleRefresh = () => {
-    // Creating a new object reference to re-trigger the useEffect hook
-    setCurrentLocation(loc => ({ ...loc })); 
+    setRefreshTrigger(prev => prev + 1); 
   };
 
   const toggleDarkMode = () => updateSettings({ theme: darkMode === 'dark' ? 'light' : 'dark' });

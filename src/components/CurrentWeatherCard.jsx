@@ -10,16 +10,17 @@ const CurrentWeatherCard = ({ weather, darkMode }) => {
     );
   }
 
+  // Defensively destructure with default values
   const {
-    location,
-    temperature,
-    feelsLike,
-    condition,
-    windSpeed,
-    humidity,
-    pressure,
-    uvIndex
-  } = weather;
+    location = 'Unknown Location',
+    temperature = '--',
+    feelsLike = '--',
+    condition = 'No data',
+    windSpeed = 0,
+    humidity = 0,
+    pressure = 0,
+    uvIndex = 0
+  } = weather || {};
 
   // Simple icon selection based on condition
   const getWeatherIcon = (cond) => {

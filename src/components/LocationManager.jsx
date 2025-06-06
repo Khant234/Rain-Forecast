@@ -7,15 +7,19 @@ const LocationManager = ({ currentLocation, onSelectLocation }) => {
   const { locations } = settings;
 
   const handleAddLocation = () => {
+    const EPSILON = 0.0001; // A small tolerance for floating point comparison
     // Prevent adding duplicates
-    if (!locations.some(loc => loc.lat === currentLocation.lat && loc.lon === currentLocation.lon)) {
+    if (!locations.some(loc => Math.abs(loc.lat - currentLocation.lat) < EPSILON && Math.abs(loc.lon - currentLocation.lon) < EPSILON)) {
       const newLocations = [...locations, currentLocation];
       updateSettings({ locations: newLocations });
     }
   };
 
   const handleRemoveLocation = (locationToRemove) => {
-    const newLocations = locations.filter(loc => !(loc.lat === locationToRemove.lat && loc.lon === locationToRemove.lon));
+    const EPSILON = 0.0001;
+    const newLocations = locations.filter(loc => 
+        !(Math.abs(loc.lat - locationToRemove.lat) < EPSILON && Math.abs(loc.lon - locationToRemove.lon) < EPSILON)
+    );
     updateSettings({ locations: newLocations });
   };
 

@@ -29,7 +29,11 @@ export const SettingsProvider = ({ children }) => {
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('weatherAppSettings', JSON.stringify(settings));
+    try {
+      localStorage.setItem('weatherAppSettings', JSON.stringify(settings));
+    } catch (error) {
+      console.error("Could not save settings to localStorage:", error);
+    }
   }, [settings]);
 
   const updateSettings = (newSettings) => {
