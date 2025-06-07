@@ -9,14 +9,29 @@ import {
   RefreshCw,
   MapPin,
 } from "lucide-react";
-import { getWeatherData } from "../services/weatherService";
-import HourlyTimeline from './HourlyTimeline'; // Assuming this is already created
+import {
+  getWeatherData,
+  initializePersistentStorage,
+  storeLocationWithPersistence,
+  getStoredLocationWithPersistence,
+} from "../services/weatherService";
+import HourlyTimeline from "./HourlyTimeline"; // Assuming this is already created
+import {
+  formatRainChance,
+  getRainChanceExplanation,
+  getRainChanceColorClass,
+  getRainChanceIcon,
+} from "../utils/rainChanceFormatter";
 
 function Home() {
   const [loading, setLoading] = useState(true);
 
-  // Request notification permission on first load
+  // Initialize persistent storage and request notification permission on first load
   useEffect(() => {
+    // Initialize persistent storage system
+    initializePersistentStorage();
+
+    // Request notification permission
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -37,13 +52,16 @@ function Home() {
       "Notification" in window &&
       Notification.permission === "granted" &&
       rainCountdown &&
-      (rainCountdown === "Raining now" || rainCountdown === "မိုးရွာနေပါပြီ" || rainCountdown.includes(":"))
+      (rainCountdown === "Raining now" ||
+        rainCountdown === "မိုးရွာနေပါပြီ" ||
+        rainCountdown.includes(":"))
     ) {
       new Notification("Rain Alert", {
-        body: language === "mm"
-          ? "မိုးရွာမည်ဖြစ်သည်။ ထီးယူသွားပါ။"
-          : "Rain is expected soon in your area!",
-        icon: "/icon.png"
+        body:
+          language === "mm"
+            ? "မိုးရွာမည်ဖြစ်သည်။ ထီးယူသွားပါ။"
+            : "Rain is expected soon in your area!",
+        icon: "/icon.png",
       });
     }
   }, [rainCountdown, language]);
@@ -51,23 +69,35 @@ function Home() {
   // Function to convert weather code to emoji
   const getWeatherEmoji = (condition) => {
     switch (condition) {
-      case "Clear": return "☀️";
-      case "Mostly Clear": return "🌤️";
-      case "Partly Cloudy": return "⛅";
-      case "Mostly Cloudy": return "🌥️";
-      case "Cloudy": return "☁️";
+      case "Clear":
+        return "☀️";
+      case "Mostly Clear":
+        return "🌤️";
+      case "Partly Cloudy":
+        return "⛅";
+      case "Mostly Cloudy":
+        return "🌥️";
+      case "Cloudy":
+        return "☁️";
       case "Fog":
-      case "Light Fog": return "🌫️";
-      case "Drizzle": return "🌦️";
+      case "Light Fog":
+        return "🌫️";
+      case "Drizzle":
+        return "🌦️";
       case "Rain":
-      case "Light Rain": return "🌧️";
-      case "Heavy Rain": return "⛈️";
+      case "Light Rain":
+        return "🌧️";
+      case "Heavy Rain":
+        return "⛈️";
       case "Snow":
       case "Flurries":
       case "Light Snow":
-      case "Heavy Snow": return "❄️";
-      case "Thunderstorm": return "⛈️";
-      default: return "🌡️";
+      case "Heavy Snow":
+        return "❄️";
+      case "Thunderstorm":
+        return "⛈️";
+      default:
+        return "🌡️";
     }
   };
 
@@ -96,39 +126,57 @@ function Home() {
       7000: "Ice Pellets",
       7101: "Heavy Ice Pellets",
       7102: "Light Ice Pellets",
-      8000: "Thunderstorm"
+      8000: "Thunderstorm",
     };
     return conditions[weatherCode] || "Unknown";
   };
 
-  // Load stored location from localStorage
+  // Load stored location using persistent storage
   const loadStoredLocation = () => {
     try {
-      const stored = localStorage.getItem('weatherAppLocation');
+      // Try new persistent storage first
+      const persistentLocation = getStoredLocationWithPersistence();
+      if (persistentLocation && persistentLocation.isFresh) {
+        return persistentLocation;
+      }
+
+      // Fall back to legacy localStorage
+      const stored = localStorage.getItem("weatherAppLocation");
       if (stored) {
         const parsed = JSON.parse(stored);
-        const oneHourAgo = Date.now() - (60 * 60 * 1000);
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
         if (parsed.timestamp && parsed.timestamp > oneHourAgo) {
           return parsed;
         }
       }
     } catch (error) {
-      console.error('Error loading stored location:', error);
+      console.error("Error loading stored location:", error);
     }
     return null;
   };
 
-  // Store GPS location in localStorage (lat, lon from GPS only)
+  // Store GPS location using persistent storage
   const storeLocation = (lat, lon, cityName) => {
     try {
-      localStorage.setItem('weatherAppLocation', JSON.stringify({
+      const locationData = {
         lat,
         lon,
         cityName,
-        timestamp: Date.now()
-      }));
+        name: cityName,
+        timestamp: Date.now(),
+      };
+
+      // Store using new persistent storage system
+      const success = storeLocationWithPersistence(locationData);
+
+      // Also store in legacy format for backward compatibility
+      localStorage.setItem("weatherAppLocation", JSON.stringify(locationData));
+
+      if (success) {
+        console.log("📍 Location stored successfully:", cityName);
+      }
     } catch (error) {
-      console.error('Error storing location:', error);
+      console.error("Error storing location:", error);
     }
   };
 
@@ -140,7 +188,13 @@ function Home() {
       );
       if (!response.ok) throw new Error();
       const data = await response.json();
-      return data.city || data.locality || data.principalSubdivision || data.countryName || "Unknown Location";
+      return (
+        data.city ||
+        data.locality ||
+        data.principalSubdivision ||
+        data.countryName ||
+        "Unknown Location"
+      );
     } catch {
       return `Location: ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
     }
@@ -154,11 +208,16 @@ function Home() {
       try {
         const weatherResponse = await getWeatherData(latitude, longitude);
         if (weatherResponse?.hourlyData?.data?.timelines?.[0]?.intervals) {
-          const intervals = weatherResponse.hourlyData.data.timelines[0].intervals;
+          const intervals =
+            weatherResponse.hourlyData.data.timelines[0].intervals;
           const currentInterval = intervals[0];
           let nextRainInterval = null;
           for (const interval of intervals) {
-            if (interval.values.precipitationProbability > 30 || interval.values.precipitationType > 0) {
+            if (
+              interval.values.precipitationProbability > 60 ||
+              (interval.values.precipitationType > 0 &&
+                interval.values.precipitationProbability > 50)
+            ) {
               nextRainInterval = interval;
               break;
             }
@@ -175,21 +234,31 @@ function Home() {
             temperature: Math.round(currentInterval.values.temperature || 0),
             humidity: Math.round(currentInterval.values.humidity || 0),
             windSpeed: Math.round(currentInterval.values.windSpeed || 0),
-            rainChance: Math.round(currentInterval.values.precipitationProbability || 0),
+            rainChance: Math.round(
+              currentInterval.values.precipitationProbability || 0
+            ),
             condition: getWeatherCondition(currentInterval.values.weatherCode),
             location: cityName,
             coordinates: { lat: latitude, lon: longitude },
             precipitationType: currentInterval.values.precipitationType || 0,
-            precipitationIntensity: currentInterval.values.precipitationIntensity || 0
+            precipitationIntensity:
+              currentInterval.values.precipitationIntensity || 0,
           };
           setWeatherData(weatherObj);
           try {
-            localStorage.setItem('lastWeatherData', JSON.stringify({ data: weatherObj, intervals, timestamp: Date.now() }));
+            localStorage.setItem(
+              "lastWeatherData",
+              JSON.stringify({
+                data: weatherObj,
+                intervals,
+                timestamp: Date.now(),
+              })
+            );
           } catch (e) {}
         }
       } catch (error) {
         try {
-          const cached = localStorage.getItem('lastWeatherData');
+          const cached = localStorage.getItem("lastWeatherData");
           if (cached) {
             const { data, intervals, timestamp } = JSON.parse(cached);
             if (Date.now() - timestamp < CACHE_DURATION) {
@@ -198,7 +267,12 @@ function Home() {
               if (intervals && Array.isArray(intervals)) {
                 const now = new Date();
                 for (const interval of intervals) {
-                  if ((interval.values.precipitationProbability > 30 || interval.values.precipitationType > 0) && new Date(interval.startTime) > now) {
+                  if (
+                    (interval.values.precipitationProbability > 60 ||
+                      (interval.values.precipitationType > 0 &&
+                        interval.values.precipitationProbability > 50)) &&
+                    new Date(interval.startTime) > now
+                  ) {
                     nextRain = new Date(interval.startTime);
                     break;
                   }
@@ -217,7 +291,7 @@ function Home() {
             rainChance: 40,
             condition: "Partly Cloudy",
             location: cityName,
-            coordinates: { lat: latitude, lon: longitude }
+            coordinates: { lat: latitude, lon: longitude },
           });
         } catch (e) {
           setWeatherData({
@@ -227,7 +301,7 @@ function Home() {
             rainChance: 40,
             condition: "Partly Cloudy",
             location: cityName,
-            coordinates: { lat: latitude, lon: longitude }
+            coordinates: { lat: latitude, lon: longitude },
           });
         }
       }
@@ -236,10 +310,14 @@ function Home() {
     };
     const storedLocation = loadStoredLocation();
     if (storedLocation) {
-      setLocation({ lat: storedLocation.lat, lon: storedLocation.lon, cityName: storedLocation.cityName });
+      setLocation({
+        lat: storedLocation.lat,
+        lon: storedLocation.lon,
+        cityName: storedLocation.cityName,
+      });
       setLoading(false);
       try {
-        const cached = localStorage.getItem('lastWeatherData');
+        const cached = localStorage.getItem("lastWeatherData");
         if (cached) {
           const { data, intervals, timestamp } = JSON.parse(cached);
           if (Date.now() - timestamp < CACHE_DURATION) {
@@ -248,7 +326,12 @@ function Home() {
             if (intervals && Array.isArray(intervals)) {
               const now = new Date();
               for (const interval of intervals) {
-                if ((interval.values.precipitationProbability > 30 || interval.values.precipitationType > 0) && new Date(interval.startTime) > now) {
+                if (
+                  (interval.values.precipitationProbability > 60 ||
+                    (interval.values.precipitationType > 0 &&
+                      interval.values.precipitationProbability > 50)) &&
+                  new Date(interval.startTime) > now
+                ) {
                   nextRain = new Date(interval.startTime);
                   break;
                 }
@@ -259,7 +342,11 @@ function Home() {
           }
         }
       } catch (e) {}
-      fetchWeatherForLocation(storedLocation.lat, storedLocation.lon, storedLocation.cityName);
+      fetchWeatherForLocation(
+        storedLocation.lat,
+        storedLocation.lon,
+        storedLocation.cityName
+      );
     }
     if (navigator.geolocation) {
       if (!storedLocation) {
@@ -289,7 +376,7 @@ function Home() {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 0
+          maximumAge: 0,
         }
       );
     } else {
@@ -317,16 +404,26 @@ function Home() {
         const timeDiff = nextRainTime - now;
         if (timeDiff > 0) {
           const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-          const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+          const minutes = Math.floor(
+            (timeDiff % (1000 * 60 * 60)) / (1000 * 60)
+          );
           const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
           if (hours > 24) {
             const days = Math.floor(hours / 24);
-            setRainCountdown(language === "mm" ? `${days} ရက်အတွင်း` : `In ${days} days`);
+            setRainCountdown(
+              language === "mm" ? `${days} ရက်အတွင်း` : `In ${days} days`
+            );
           } else {
-            setRainCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            setRainCountdown(
+              `${hours.toString().padStart(2, "0")}:${minutes
+                .toString()
+                .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+            );
           }
         } else {
-          setRainCountdown(language === "mm" ? "မိုးရွာနေပါပြီ" : "Raining now");
+          setRainCountdown(
+            language === "mm" ? "မိုးရွာနေပါပြီ" : "Raining now"
+          );
         }
       } else if (weatherData) {
         setRainCountdown(language === "mm" ? "မိုးမရွာပါ" : "No rain");
@@ -341,15 +438,21 @@ function Home() {
   const toggleLanguage = () => setLanguage(language === "mm" ? "en" : "mm");
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode
-        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
-        : "bg-gradient-to-br from-blue-50 via-white to-blue-50"
-    }`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+          : "bg-gradient-to-br from-blue-50 via-white to-blue-50"
+      }`}
+    >
       <div className="container mx-auto px-2 py-4 sm:py-6 md:py-8 max-w-md">
-        <div className={`rounded-3xl shadow-xl p-6 sm:p-8 md:p-10 mb-6 transition-all ${
-          darkMode ? "bg-gray-800/70 backdrop-blur" : "bg-white/95 backdrop-blur"
-        }`}>
+        <div
+          className={`rounded-3xl shadow-xl p-6 sm:p-8 md:p-10 mb-6 transition-all ${
+            darkMode
+              ? "bg-gray-800/70 backdrop-blur"
+              : "bg-white/95 backdrop-blur"
+          }`}
+        >
           {/* Floating toggles */}
           <div className="flex justify-between items-center mb-2">
             <button
@@ -377,48 +480,201 @@ function Home() {
           {/* City Name and Condition */}
           {weatherData?.location && (
             <div className="flex flex-col items-center mb-2">
-              <div className={`text-base font-semibold ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{weatherData.location}</div>
+              <div
+                className={`text-base font-semibold ${
+                  darkMode ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                {weatherData.location}
+              </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-2xl">{getWeatherEmoji(weatherData.condition)}</span>
-                <span className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-500"}`}>{weatherData.condition}</span>
+                <span className="text-2xl">
+                  {getWeatherEmoji(weatherData.condition)}
+                </span>
+                <span
+                  className={`text-sm ${
+                    darkMode ? "text-gray-300" : "text-gray-500"
+                  }`}
+                >
+                  {weatherData.condition}
+                </span>
               </div>
             </div>
           )}
           {/* Large Temperature */}
           <div className="flex flex-col items-center my-6">
-            <div className={`text-6xl sm:text-7xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>{weatherData?.temperature ?? "--"}°</div>
+            <div
+              className={`text-6xl sm:text-7xl font-bold ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {weatherData?.temperature ?? "--"}°
+            </div>
           </div>
           {/* Rain Countdown and Probability */}
           <div className="flex flex-col items-center mb-6">
-            <div className={`text-xs mb-1 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "မိုးရွာမည့်အချိန်" : "Next Rain In"}</div>
-            <div className={`text-2xl font-mono font-bold mb-1 ${darkMode ? "text-blue-200" : "text-blue-700"}`}>{rainCountdown || (weatherData ? (language === "mm" ? "မိုးမရွာပါ (နောက် ၂၄ နာရီအတွင်း)" : "No rain in the next 24 hours") : "--:--:--")}</div>
-            <div className={`text-xs ${darkMode ? "text-blue-300" : "text-blue-600"}`}>{weatherData?.rainChance ? `${weatherData.rainChance}% chance` : ""}</div>
+            <div
+              className={`text-xs mb-1 ${
+                darkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              {language === "mm" ? "မိုးရွာမည့်အချိန်" : "Next Rain In"}
+            </div>
+            <div
+              className={`text-2xl font-mono font-bold mb-1 ${
+                darkMode ? "text-blue-200" : "text-blue-700"
+              }`}
+            >
+              {rainCountdown ||
+                (weatherData
+                  ? language === "mm"
+                    ? "မိုးမရွာပါ (နောက် ၂၄ နာရီအတွင်း)"
+                    : "No rain in the next 24 hours"
+                  : "--:--:--")}
+            </div>
+            <div
+              className={`text-xs ${getRainChanceColorClass(
+                weatherData?.rainChance,
+                darkMode
+              )}`}
+            >
+              {weatherData?.rainChance !== null &&
+              weatherData?.rainChance !== undefined
+                ? formatRainChance(
+                    weatherData.rainChance,
+                    language,
+                    true,
+                    "full"
+                  )
+                : ""}
+            </div>
+            {weatherData?.rainChance !== null &&
+              weatherData?.rainChance !== undefined && (
+                <div
+                  className={`text-xs mt-1 ${
+                    darkMode ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  {getRainChanceExplanation(weatherData.rainChance, language)}
+                </div>
+              )}
           </div>
           {/* Weather Details Grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className={`flex flex-col items-center p-2 rounded-xl ${darkMode ? "bg-gray-700/40" : "bg-gray-50"}`}>
+            <div
+              className={`flex flex-col items-center p-2 rounded-xl ${
+                darkMode ? "bg-gray-700/40" : "bg-gray-50"
+              }`}
+            >
               <ThermometerSun className="mb-1 text-orange-500" size={18} />
-              <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "အပူချိန်" : "Temp"}</div>
-              <div className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{weatherData?.temperature}°C</div>
+              <div
+                className={`text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {language === "mm" ? "အပူချိန်" : "Temp"}
+              </div>
+              <div
+                className={`text-base font-semibold ${
+                  darkMode ? "text-white" : "text-gray-800"
+                }`}
+              >
+                {weatherData?.temperature}°C
+              </div>
             </div>
-            <div className={`flex flex-col items-center p-2 rounded-xl ${darkMode ? "bg-gray-700/40" : "bg-gray-50"}`}>
+            <div
+              className={`flex flex-col items-center p-2 rounded-xl ${
+                darkMode ? "bg-gray-700/40" : "bg-gray-50"
+              }`}
+            >
               <Droplets className="mb-1 text-blue-500" size={18} />
-              <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "စိုထိုင်းဆ" : "Humidity"}</div>
-              <div className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{weatherData?.humidity}%</div>
+              <div
+                className={`text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {language === "mm" ? "စိုထိုင်းဆ" : "Humidity"}
+              </div>
+              <div
+                className={`text-base font-semibold ${
+                  darkMode ? "text-white" : "text-gray-800"
+                }`}
+              >
+                {weatherData?.humidity}%
+              </div>
             </div>
-            <div className={`flex flex-col items-center p-2 rounded-xl ${darkMode ? "bg-gray-700/40" : "bg-gray-50"}`}>
+            <div
+              className={`flex flex-col items-center p-2 rounded-xl ${
+                darkMode ? "bg-gray-700/40" : "bg-gray-50"
+              }`}
+            >
               <Wind className="mb-1 text-blue-500" size={18} />
-              <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "လေ" : "Wind"}</div>
-              <div className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{weatherData?.windSpeed} km/h</div>
+              <div
+                className={`text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {language === "mm" ? "လေ" : "Wind"}
+              </div>
+              <div
+                className={`text-base font-semibold ${
+                  darkMode ? "text-white" : "text-gray-800"
+                }`}
+              >
+                {weatherData?.windSpeed} km/h
+              </div>
             </div>
-            <div className={`flex flex-col items-center p-2 rounded-xl ${darkMode ? "bg-gray-700/40" : "bg-gray-50"}`}>
+            <div
+              className={`flex flex-col items-center p-2 rounded-xl ${
+                darkMode ? "bg-gray-700/40" : "bg-gray-50"
+              }`}
+            >
               <Droplets className="mb-1 text-cyan-500" size={18} />
-              <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "မိုး%" : "Rain%"}</div>
-              <div className={`text-base font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}>{weatherData?.rainChance}%</div>
+              <div
+                className={`text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Chance"}
+              </div>
+              <div
+                className={`text-sm font-semibold text-center ${getRainChanceColorClass(
+                  weatherData?.rainChance,
+                  darkMode
+                )}`}
+              >
+                {weatherData?.rainChance !== null &&
+                weatherData?.rainChance !== undefined
+                  ? formatRainChance(
+                      weatherData.rainChance,
+                      language,
+                      false,
+                      "short"
+                    )
+                  : "--"}
+              </div>
+              <div
+                className={`text-xs text-center ${
+                  darkMode ? "text-gray-500" : "text-gray-500"
+                }`}
+              >
+                {weatherData?.rainChance !== null &&
+                weatherData?.rainChance !== undefined
+                  ? `${weatherData.rainChance}%`
+                  : ""}
+              </div>
             </div>
           </div>
         </div>
-        <div className={`text-center text-xs sm:text-sm md:text-base ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{language === "mm" ? "မြန်မာနိုင်ငံ မိုးလေဝသ အချက်အလက်" : "Myanmar Weather Information"}</div>
+        <div
+          className={`text-center text-xs sm:text-sm md:text-base ${
+            darkMode ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
+          {language === "mm"
+            ? "မြန်မာနိုင်ငံ မိုးလေဝသ အချက်အလက်"
+            : "Myanmar Weather Information"}
+        </div>
       </div>
     </div>
   );

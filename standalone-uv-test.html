@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone UV Index Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌞 Standalone UV Index Validation Test</h1>
+        <p>This page tests the UV index validation logic with embedded functions.</p>
+        
+        <div class="test-section info">
+            <h3>Test Configuration</h3>
+            <p><strong>Location:</strong> Yangon, Myanmar (16.8661°N, 96.1951°E)</p>
+            <p><strong>Timezone:</strong> UTC+6.5 (Myanmar Time)</p>
+            <p><strong>Current Time:</strong> <span id="currentTime">Loading...</span></p>
+            <p><strong>Expected Behavior:</strong> UV Index should be 0 during nighttime (6 PM - 6 AM local time)</p>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        // Test configuration
+        const TEST_LAT = 16.8661;
+        const TEST_LON = 96.1951;
+        const MYANMAR_TIMEZONE_OFFSET = 6.5;
+
+        // Embedded UV validation functions
+        function getTimezoneOffset(lat, lon) {
+            const timezoneAdjustments = {
+                myanmar: { latMin: 9, latMax: 29, lonMin: 92, lonMax: 102, offset: 6.5 },
+                india: { latMin: 6, latMax: 37, lonMin: 68, lonMax: 97, offset: 5.5 },
+                china: { latMin: 18, latMax: 54, lonMin: 73, lonMax: 135, offset: 8 },
+            };
+
+            for (const [region, zone] of Object.entries(timezoneAdjustments)) {
+                if (lat >= zone.latMin && lat <= zone.latMax && 
+                    lon >= zone.lonMin && lon <= zone.lonMax) {
+                    console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
+                    return zone.offset;
+                }
+            }
+
+            const baseOffset = lon / 15;
+            const roundedOffset = Math.round(baseOffset * 2) / 2;
+            console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
+            return roundedOffset;
+        }
+
+        function isNighttime(timestamp, lat, lon) {
+            const date = new Date(timestamp);
+            const utcHour = date.getUTCHours();
+            const utcMinutes = date.getUTCMinutes();
+            
+            const timezoneOffset = getTimezoneOffset(lat, lon);
+            
+            const localTime = utcHour + (utcMinutes / 60) + timezoneOffset;
+            const localHour = ((localTime % 24) + 24) % 24;
+            
+            const isNight = localHour < 6 || localHour >= 18;
+            
+            return {
+                isNight,
+                localHour: Math.floor(localHour),
+                localMinutes: Math.floor((localHour % 1) * 60),
+                timezoneOffset
+            };
+        }
+
+        function validateUVIndex(uvIndex, timestamp, lat, lon) {
+            const timeInfo = isNighttime(timestamp, lat, lon);
+            if (timeInfo.isNight) {
+                return 0;
+            }
+            return Math.max(0, Math.min(15, Math.round(uvIndex || 0)));
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const now = new Date();
+            const utcTime = now.toUTCString();
+            const localTime = new Date(now.getTime() + (MYANMAR_TIMEZONE_OFFSET * 60 * 60 * 1000));
+            document.getElementById('currentTime').innerHTML = 
+                `UTC: ${utcTime}<br>Myanmar: ${localTime.toISOString().replace('T', ' ').slice(0, 19)}`;
+        }
+        
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        function runAllTests() {
+            console.log('🧪 Running UV index validation tests...');
+            
+            // Test 1: Timezone Calculation
+            testTimezoneCalculation();
+            
+            // Test 2: UV Validation Logic
+            testUVValidation();
+            
+            // Test 3: Real-time UV Test
+            testRealTimeUV();
+        }
+
+        function testTimezoneCalculation() {
+            const calculatedOffset = getTimezoneOffset(TEST_LAT, TEST_LON);
+            const offsetDifference = Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET);
+            const isAccurate = offsetDifference <= 0.1;
+
+            const summary = isAccurate
+                ? `✅ Timezone calculation is accurate (±${offsetDifference.toFixed(1)} hour)`
+                : `⚠️ Timezone calculation has ${offsetDifference.toFixed(1)} hour difference`;
+
+            const details = `Calculated offset: UTC+${calculatedOffset}
+Actual Myanmar offset: UTC+${MYANMAR_TIMEZONE_OFFSET}
+Offset difference: ${offsetDifference.toFixed(1)} hours`;
+
+            addTestResult('Timezone Calculation', isAccurate ? 'success' : 'warning', summary, details);
+        }
+
+        function testUVValidation() {
+            const testCases = [
+                { time: '2024-01-01T02:00:00Z', uv: 8, expected: 8, desc: 'Day (8:30 AM local)' },
+                { time: '2024-01-01T06:00:00Z', uv: 5, expected: 5, desc: 'Day (12:30 PM local)' },
+                { time: '2024-01-01T12:00:00Z', uv: 11, expected: 0, desc: 'Night (6:30 PM local)' },
+                { time: '2024-01-01T14:00:00Z', uv: 7, expected: 0, desc: 'Night (8:30 PM local)' },
+                { time: '2024-01-01T18:00:00Z', uv: 3, expected: 0, desc: 'Night (12:30 AM+1 local)' },
+                { time: '2024-01-01T10:00:00Z', uv: 15, expected: 15, desc: 'Day (4:30 PM local)' },
+                { time: '2024-01-01T08:00:00Z', uv: 20, expected: 15, desc: 'Day (2:30 PM local) - UV too high' },
+                { time: '2024-01-01T23:30:00Z', uv: -5, expected: 0, desc: 'Night (6:00 AM+1 local) - UV negative' }
+            ];
+
+            let passed = 0;
+            let failed = 0;
+            let results = [];
+
+            testCases.forEach(testCase => {
+                const result = validateUVIndex(testCase.uv, testCase.time, TEST_LAT, TEST_LON);
+                const timeInfo = isNighttime(testCase.time, TEST_LAT, TEST_LON);
+                const success = result === testCase.expected;
+                
+                if (success) passed++;
+                else failed++;
+
+                results.push({
+                    ...testCase,
+                    actual: result,
+                    success,
+                    localTime: `${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')}`,
+                    isNight: timeInfo.isNight
+                });
+            });
+
+            const summary = `✅ Passed: ${passed}/${testCases.length}, ❌ Failed: ${failed}/${testCases.length}`;
+            const details = results.map(r => 
+                `${r.success ? '✅' : '❌'} ${r.desc}: UV ${r.uv} → ${r.actual} (expected ${r.expected})
+   Local time: ${r.localTime} (${r.isNight ? 'Night' : 'Day'})`
+            ).join('\n');
+
+            addTestResult('UV Validation Logic', failed === 0 ? 'success' : 'error', summary, details);
+        }
+
+        function testRealTimeUV() {
+            const now = new Date();
+            const currentUV = 8;
+            const correctedUV = validateUVIndex(currentUV, now.toISOString(), TEST_LAT, TEST_LON);
+            const timeInfo = isNighttime(now.toISOString(), TEST_LAT, TEST_LON);
+
+            const expectedUV = timeInfo.isNight ? 0 : currentUV;
+            const isCorrect = correctedUV === expectedUV;
+
+            const summary = isCorrect
+                ? `✅ Current UV index is correct: ${correctedUV}`
+                : `❌ Current UV index was corrected: ${currentUV} → ${correctedUV}`;
+
+            const details = `Current time: ${now.toISOString()}
+Local time: ${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')}
+Timezone offset: UTC+${timeInfo.timezoneOffset}
+Is nighttime: ${timeInfo.isNight}
+Original UV: ${currentUV}
+Corrected UV: ${correctedUV}
+Expected UV: ${expectedUV}`;
+
+            addTestResult('Real-time UV Test', isCorrect ? 'success' : 'warning', summary, details);
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        function addTestResult(title, type, message, details = null) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-section ${type}`;
+            testDiv.innerHTML = `
+                <div class="status">${title}</div>
+                <div>${message}</div>
+                ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            // Remove existing test result for this title
+            const existing = Array.from(resultsDiv.children).find(child => 
+                child.querySelector('.status').textContent === title
+            );
+            if (existing) {
+                existing.remove();
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+
+        // Auto-run tests on load
+        setTimeout(() => {
+            runAllTests();
+        }, 1000);
+    </script>
+</body>
+</html>

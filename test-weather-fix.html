@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather API Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather API Fix - Test Results</h1>
+    
+    <div class="test-section">
+        <h2>✅ Problem Fixed: Invalid weather data received from service</h2>
+        
+        <div class="success">
+            <strong>Issue Resolved:</strong> The weather service was returning data in a nested structure that wasn't being properly parsed by the frontend.
+        </div>
+        
+        <h3>Root Cause:</h3>
+        <p>The API response structure was:</p>
+        <div class="code">
+{
+  "data": {
+    "timelines": [
+      {
+        "timestep": "1d",
+        "intervals": [...]
+      },
+      {
+        "timestep": "1h", 
+        "intervals": [...]
+      }
+    ]
+  }
+}
+        </div>
+        
+        <p>But the frontend was expecting:</p>
+        <div class="code">
+{
+  "timelines": [...]
+}
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Changes Made:</h2>
+        
+        <h3>1. Fixed Environment Variables</h3>
+        <ul>
+            <li>Added <code>TOMORROW_API_KEY</code> (without VITE_ prefix) for backend server</li>
+            <li>Backend now properly reads the API key from environment</li>
+        </ul>
+        
+        <h3>2. Updated Data Structure Validation</h3>
+        <ul>
+            <li>Fixed <code>getWeatherData()</code> to check for <code>data.data.timelines</code></li>
+            <li>Returns <code>data.data</code> instead of <code>data</code> to match expected structure</li>
+        </ul>
+        
+        <h3>3. Enhanced Data Processing</h3>
+        <ul>
+            <li>Updated Home component to find daily and hourly timelines by timestep</li>
+            <li>Added fallback values for missing data fields</li>
+            <li>Improved error handling for malformed responses</li>
+        </ul>
+        
+        <h3>4. Backend Server Improvements</h3>
+        <ul>
+            <li>Added API key validation</li>
+            <li>Better error logging and responses</li>
+            <li>Proper environment variable handling</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Test the API Endpoint:</h2>
+        <p>You can test the weather API directly:</p>
+        <button onclick="testAPI()">Test Weather API</button>
+        <div id="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Behavior:</h2>
+        <ul>
+            <li>✅ Backend server starts successfully on port 5000</li>
+            <li>✅ API endpoint responds with proper weather data</li>
+            <li>✅ Frontend correctly parses the nested data structure</li>
+            <li>✅ Weather information displays properly in the UI</li>
+            <li>✅ Error messages are clear and actionable</li>
+        </ul>
+        
+        <div class="success">
+            <strong>Result:</strong> The weather app should now load successfully and display current weather, hourly forecast, and daily forecast without the "Invalid weather data received from service" error.
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing API...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/weather?lat=16.8409&lon=96.1735&fields=temperature,temperatureApparent,humidity,windSpeed,windDirection,weatherCode,precipitationProbability,precipitationType,pressureSurfaceLevel,uvIndex,visibility,sunriseTime,sunsetTime&timesteps=1h,1d&units=metric');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✅ API Test Successful!</strong><br>
+                        Response contains ${data.data?.timelines?.length || 0} timelines<br>
+                        Daily timeline: ${data.data?.timelines?.find(t => t.timestep === '1d') ? '✅ Found' : '❌ Missing'}<br>
+                        Hourly timeline: ${data.data?.timelines?.find(t => t.timestep === '1h') ? '✅ Found' : '❌ Missing'}
+                    </div>
+                    <details>
+                        <summary>View Raw Response</summary>
+                        <div class="code">${JSON.stringify(data, null, 2)}</div>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ API Test Failed:</strong><br>
+                        ${error.message}<br><br>
+                        Make sure the backend server is running: <code>node server.js</code>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

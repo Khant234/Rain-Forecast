@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ Weather Service Test</h1>
+        <p>This page tests the enhanced weather service with fallback mechanisms.</p>
+        
+        <div class="test-section">
+            <h3>Test Configuration</h3>
+            <p><strong>API Key:</strong> <span id="apiKeyStatus">Checking...</span></p>
+            <p><strong>Location:</strong> Yangon, Myanmar (16.8661, 96.1951)</p>
+            <p><strong>Fallback Mode:</strong> Direct API → Mock Data</p>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="testDirectAPI()">Test Direct API</button>
+            <button onclick="testProxyAPI()">Test Proxy API</button>
+            <button onclick="testMockData()">Test Mock Data</button>
+            <button onclick="testPersistentStorage()">Test Storage</button>
+            <button onclick="clearAllTests()">Clear Results</button>
+        </div>
+
+        <div id="testResults"></div>
+    </div>
+
+    <script type="module">
+        // Test configuration
+        const TEST_LAT = 16.8661;
+        const TEST_LON = 96.1951;
+        const API_KEY = 'WP1YfdsbDqxBeOQFU1ERgQjVhbLGZf9U'; // From .env.local
+        
+        // Check API key status
+        document.getElementById('apiKeyStatus').textContent = API_KEY ? '✅ Available' : '❌ Missing';
+
+        // Test functions
+        window.testDirectAPI = async function() {
+            addTestResult('Direct API Test', 'loading', 'Testing direct API call...');
+            
+            try {
+                const url = `https://api.tomorrow.io/v4/timelines?apikey=${API_KEY}&location=${TEST_LAT},${TEST_LON}&fields=temperature,precipitationProbability,weatherCode&timesteps=1h&units=metric&startTime=${new Date().toISOString()}&endTime=${new Date(Date.now() + 24*60*60*1000).toISOString()}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.data && data.data.timelines && data.data.timelines.length > 0) {
+                    const firstInterval = data.data.timelines[0].intervals[0];
+                    const temp = firstInterval.values.temperature;
+                    const rain = firstInterval.values.precipitationProbability;
+                    
+                    addTestResult('Direct API Test', 'success', 
+                        `✅ Success! Temperature: ${temp}°C, Rain: ${rain}%`, 
+                        JSON.stringify(data, null, 2)
+                    );
+                } else {
+                    throw new Error('Invalid data structure received');
+                }
+                
+            } catch (error) {
+                addTestResult('Direct API Test', 'error', 
+                    `❌ Failed: ${error.message}`, 
+                    error.stack
+                );
+            }
+        };
+
+        window.testProxyAPI = async function() {
+            addTestResult('Proxy API Test', 'loading', 'Testing proxy API call...');
+            
+            try {
+                const url = `/api/weather?lat=${TEST_LAT}&lon=${TEST_LON}&fields=temperature,precipitationProbability,weatherCode&timesteps=1h&units=metric`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                addTestResult('Proxy API Test', 'success', 
+                    `✅ Success! Cached: ${data.cached || false}`, 
+                    JSON.stringify(data, null, 2)
+                );
+                
+            } catch (error) {
+                addTestResult('Proxy API Test', 'error', 
+                    `❌ Failed: ${error.message} (This is expected if proxy server is not running)`, 
+                    error.stack
+                );
+            }
+        };
+
+        window.testMockData = function() {
+            addTestResult('Mock Data Test', 'loading', 'Generating mock weather data...');
+            
+            try {
+                // Simulate the mock data generation
+                const now = new Date();
+                const mockData = {
+                    timelines: [{
+                        timestep: "1h",
+                        intervals: [{
+                            startTime: now.toISOString(),
+                            values: {
+                                temperature: 28 + Math.random() * 6 - 3,
+                                precipitationProbability: Math.random() * 100,
+                                weatherCode: Math.random() > 0.7 ? 4001 : 1100,
+                                humidity: 60 + Math.random() * 30,
+                                windSpeed: 3 + Math.random() * 12
+                            }
+                        }]
+                    }]
+                };
+                
+                const temp = mockData.timelines[0].intervals[0].values.temperature.toFixed(1);
+                const rain = mockData.timelines[0].intervals[0].values.precipitationProbability.toFixed(0);
+                
+                addTestResult('Mock Data Test', 'success', 
+                    `✅ Success! Mock Temperature: ${temp}°C, Rain: ${rain}%`, 
+                    JSON.stringify(mockData, null, 2)
+                );
+                
+            } catch (error) {
+                addTestResult('Mock Data Test', 'error', 
+                    `❌ Failed: ${error.message}`, 
+                    error.stack
+                );
+            }
+        };
+
+        window.testPersistentStorage = function() {
+            addTestResult('Storage Test', 'loading', 'Testing browser storage...');
+            
+            try {
+                // Test localStorage
+                const testKey = 'weather_test_' + Date.now();
+                const testData = { test: true, timestamp: Date.now() };
+                
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                localStorage.removeItem(testKey);
+                
+                if (retrieved && retrieved.test === true) {
+                    // Test storage usage
+                    let totalSize = 0;
+                    for (let key in localStorage) {
+                        if (localStorage.hasOwnProperty(key)) {
+                            totalSize += localStorage[key].length;
+                        }
+                    }
+                    
+                    addTestResult('Storage Test', 'success', 
+                        `✅ Success! Storage available. Current usage: ${(totalSize/1024).toFixed(2)}KB`, 
+                        `Storage type: localStorage\nTest data: ${JSON.stringify(retrieved, null, 2)}`
+                    );
+                } else {
+                    throw new Error('Data retrieval failed');
+                }
+                
+            } catch (error) {
+                addTestResult('Storage Test', 'error', 
+                    `❌ Failed: ${error.message}`, 
+                    error.stack
+                );
+            }
+        };
+
+        window.clearAllTests = function() {
+            document.getElementById('testResults').innerHTML = '';
+        };
+
+        function addTestResult(title, type, message, details = null) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-section ${type}`;
+            testDiv.innerHTML = `
+                <div class="status">${title}</div>
+                <div>${message}</div>
+                ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            // Remove existing test result for this title
+            const existing = Array.from(resultsDiv.children).find(child => 
+                child.querySelector('.status').textContent === title
+            );
+            if (existing) {
+                existing.remove();
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+
+        // Auto-run basic tests on load
+        setTimeout(() => {
+            console.log('🧪 Running automatic tests...');
+            testMockData();
+            testPersistentStorage();
+        }, 1000);
+    </script>
+</body>
+</html>

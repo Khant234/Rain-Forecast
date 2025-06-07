@@ -1,6 +1,10 @@
 import React from "react";
 import { format } from "date-fns";
 import WeatherAnimation from "../../common/WeatherAnimation";
+import {
+  formatRainChance,
+  getRainChanceColorClass,
+} from "../../../utils/rainChanceFormatter";
 
 const HourlyTimeline = ({ hourlyData, language }) => {
   const formatTime = (date) => {
@@ -59,10 +63,28 @@ const HourlyTimeline = ({ hourlyData, language }) => {
                 ? `${hour.temperature}°C`
                 : `${hour.temperature}°C`}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div
+              className={`text-xs ${getRainChanceColorClass(
+                hour.precipitationProbability,
+                false
+              )}`}
+            >
               {language === "mm"
-                ? `မိုးရွာနိုင်ခြေ ${hour.precipitationProbability}%`
-                : `${hour.precipitationProbability}% chance`}
+                ? `${formatRainChance(
+                    hour.precipitationProbability,
+                    language,
+                    false,
+                    "short"
+                  )}`
+                : `${formatRainChance(
+                    hour.precipitationProbability,
+                    language,
+                    false,
+                    "short"
+                  )}`}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              {hour.precipitationProbability}%
             </div>
           </div>
         ))}

@@ -34,7 +34,10 @@ export const useWeather = () => {
       const hourly = intervals.slice(0, 24).map((interval) => ({
         time: interval.startTime,
         temperature: Math.round(interval.values.temperature),
-        hasRain: interval.values.precipitationProbability > 30,
+        hasRain:
+          interval.values.precipitationProbability > 60 ||
+          (interval.values.precipitationType > 0 &&
+            interval.values.precipitationProbability > 50),
         precipProbability: interval.values.precipitationProbability,
       }));
       setHourlyForecast(hourly);

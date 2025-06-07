@@ -1,6 +1,11 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import WeatherAnimation from "../../common/WeatherAnimation";
+import {
+  formatRainChance,
+  getRainChanceExplanation,
+  getRainChanceColorClass,
+} from "../../../utils/rainChanceFormatter";
 
 const RainCountdown = ({ nextRain, language }) => {
   const formatTimeDistance = (date) => {
@@ -54,10 +59,31 @@ const RainCountdown = ({ nextRain, language }) => {
         <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">
           {formatMessage(timeDistance)}
         </p>
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+        <p
+          className={`text-xs sm:text-sm ${getRainChanceColorClass(
+            nextRain.precipitationProbability,
+            false
+          )}`}
+        >
           {language === "mm"
-            ? `မိုးရွာနိုင်ခြေ: ${nextRain.precipitationProbability}%`
-            : `Probability: ${nextRain.precipitationProbability}%`}
+            ? `မိုးရွာနိုင်ခြေ: ${formatRainChance(
+                nextRain.precipitationProbability,
+                language,
+                true,
+                "full"
+              )}`
+            : `Probability: ${formatRainChance(
+                nextRain.precipitationProbability,
+                language,
+                true,
+                "full"
+              )}`}
+        </p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          {getRainChanceExplanation(
+            nextRain.precipitationProbability,
+            language
+          )}
         </p>
       </div>
     </div>

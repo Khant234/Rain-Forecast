@@ -1,5 +1,10 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  formatRainChance,
+  getRainChanceColorClass,
+  normalizePrecipitationProbability,
+} from "../utils/rainChanceFormatter";
 
 const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
   const scrollRef = React.useRef(null);
@@ -16,9 +21,56 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
   }
 
   const getWeatherEmoji = (interval) => {
-    const { precipitationType, precipitationProbability } = interval.values;
-    if (precipitationType > 0 || precipitationProbability > 70) return "🌧️";
-    if (precipitationProbability > 30) return "🌦️";
+    const { precipitationType, precipitationProbability, weatherCode } =
+      interval.values;
+
+    // Use weather code as primary indicator
+    if (weatherCode) {
+      switch (weatherCode) {
+        case 1000: // Clear
+          return "☀️";
+        case 1100: // Mostly Clear
+        case 1101: // Partly Cloudy
+          return "⛅";
+        case 1102: // Mostly Cloudy
+        case 1001: // Cloudy
+          return "☁️";
+        case 2000: // Fog
+        case 2100: // Light Fog
+          return "🌫️";
+        case 4000: // Light Rain
+          return "🌦️";
+        case 4001: // Rain
+        case 4200: // Heavy Rain
+        case 4201: // Heavy Rain
+          return "🌧️";
+        case 5000: // Snow
+        case 5001: // Flurries
+        case 5100: // Light Snow
+        case 5101: // Heavy Snow
+          return "❄️";
+        case 6000: // Freezing Drizzle
+        case 6001: // Freezing Rain
+        case 6200: // Light Freezing Rain
+        case 6201: // Heavy Freezing Rain
+          return "🌨️";
+        case 7000: // Ice Pellets
+        case 7101: // Heavy Ice Pellets
+        case 7102: // Light Ice Pellets
+          return "🧊";
+        case 8000: // Thunderstorm
+          return "⛈️";
+        default:
+          // Fallback to precipitation-based logic for unknown codes
+          break;
+      }
+    }
+
+    // Fallback: Only show rain icons for significant precipitation probability
+    if (precipitationType > 0 && precipitationProbability > 60) return "🌧️";
+    if (precipitationProbability > 70) return "🌦️";
+
+    // Default to sunny for low precipitation probability
     return "☀️";
   };
 
@@ -46,8 +98,12 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
 
       <div
         ref={scrollRef}
-        className="overflow-x-auto hide-scrollbar flex space-x-2 sm:space-x-3 md:space-x-4 px-6 sm:px-8 py-3 sm:py-4"
-        style={{ scrollSnapType: "x mandatory" }}
+        className="overflow-x-auto flex space-x-2 sm:space-x-3 md:space-x-4 px-6 sm:px-8 py-3 sm:py-4"
+        style={{
+          scrollSnapType: "x mandatory",
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+        }}
       >
         {hourlyData.map((interval) => (
           <div
@@ -68,18 +124,34 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
               <div className="text-xs sm:text-sm font-medium">
                 {formatTime(interval.startTime)}
               </div>
-              <div className="text-xl sm:text-2xl">{getWeatherEmoji(interval)}</div>
+              <div className="text-xl sm:text-2xl">
+                {getWeatherEmoji(interval)}
+              </div>
               <div className="text-xs sm:text-sm font-bold">
                 {Math.round(interval.values.temperature)}°C
               </div>
               <div
-                className={`text-[10px] sm:text-xs ${
-                  darkMode ? "text-gray-400" : "text-gray-500"
+                className={`text-[10px] sm:text-xs text-center ${getRainChanceColorClass(
+                  interval.values.precipitationProbability,
+                  darkMode
+                )}`}
+              >
+                {formatRainChance(
+                  interval.values.precipitationProbability,
+                  language,
+                  false,
+                  "short"
+                )}
+              </div>
+              <div
+                className={`text-[9px] sm:text-[10px] text-center ${
+                  darkMode ? "text-gray-500" : "text-gray-500"
                 }`}
               >
-                {interval.values.precipitationProbability}%
-                <br />
-                {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain"}
+                {normalizePrecipitationProbability(
+                  interval.values.precipitationProbability
+                )}
+                %
               </div>
             </div>
           </div>
@@ -97,16 +169,6 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
       >
         <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
-
-      <style jsx>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 };

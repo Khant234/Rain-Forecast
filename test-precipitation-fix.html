@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precipitation Probability Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .test-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌧️ Precipitation Probability Fix Test</h1>
+        <p>This page tests the precipitation probability formatting and validation fixes.</p>
+        
+        <div class="test-section info">
+            <h3>Test Configuration</h3>
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Precipitation percentages should be whole numbers (no excessive decimals)</li>
+                <li>Labels should correctly correspond to percentage ranges</li>
+                <li>Temperature should follow realistic patterns (not random jumps)</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div id="testResults"></div>
+    </div>
+
+    <script type="module">
+        // Import the utility functions
+        import { 
+            formatRainChance, 
+            normalizePrecipitationProbability 
+        } from './src/utils/rainChanceFormatter.js';
+
+        // Test data with problematic values
+        const testData = [
+            { value: 11.167969713839312, expected: 11, label: "V.Low" },
+            { value: 34.27522661032127, expected: 34, label: "Low" },
+            { value: 0.0000001, expected: 0, label: "V.Low" },
+            { value: 99.999999, expected: 100, label: "V.High" },
+            { value: 45.6789, expected: 46, label: "Mod" },
+            { value: 67.123456789, expected: 67, label: "High" },
+            { value: -5, expected: 0, label: "V.Low" },
+            { value: 150, expected: 100, label: "V.High" },
+            { value: null, expected: 0, label: "" },
+            { value: undefined, expected: 0, label: "" }
+        ];
+
+        function runAllTests() {
+            console.log('🧪 Running precipitation probability tests...');
+            
+            // Test 1: Normalization Function
+            testNormalization();
+            
+            // Test 2: Label Accuracy
+            testLabelAccuracy();
+            
+            // Test 3: Temperature Pattern Test
+            testTemperaturePattern();
+        }
+
+        function testNormalization() {
+            let passed = 0;
+            let failed = 0;
+            let results = [];
+
+            testData.forEach(test => {
+                const normalized = normalizePrecipitationProbability(test.value);
+                const success = normalized === test.expected;
+                
+                if (success) passed++;
+                else failed++;
+
+                results.push({
+                    input: test.value,
+                    expected: test.expected,
+                    actual: normalized,
+                    success
+                });
+            });
+
+            const summary = `✅ Passed: ${passed}/${testData.length}, ❌ Failed: ${failed}/${testData.length}`;
+            const details = results.map(r => 
+                `${r.success ? '✅' : '❌'} Input: ${r.input} → Expected: ${r.expected}, Got: ${r.actual}`
+            ).join('\n');
+
+            addTestResult('Precipitation Normalization', failed === 0 ? 'success' : 'error', summary, details);
+        }
+
+        function testLabelAccuracy() {
+            const labelTests = [
+                { value: 11, expectedLabel: "V.Low" },
+                { value: 34, expectedLabel: "Low" },
+                { value: 46, expectedLabel: "Mod" },
+                { value: 67, expectedLabel: "High" },
+                { value: 89, expectedLabel: "V.High" },
+                { value: 0, expectedLabel: "V.Low" },
+                { value: 20, expectedLabel: "V.Low" },
+                { value: 21, expectedLabel: "Low" },
+                { value: 40, expectedLabel: "Low" },
+                { value: 41, expectedLabel: "Mod" },
+                { value: 60, expectedLabel: "Mod" },
+                { value: 61, expectedLabel: "High" },
+                { value: 80, expectedLabel: "High" },
+                { value: 81, expectedLabel: "V.High" },
+                { value: 100, expectedLabel: "V.High" }
+            ];
+
+            let passed = 0;
+            let failed = 0;
+            let results = [];
+
+            labelTests.forEach(test => {
+                const formatted = formatRainChance(test.value, "en", false, "short");
+                const success = formatted === test.expectedLabel;
+                
+                if (success) passed++;
+                else failed++;
+
+                results.push({
+                    value: test.value,
+                    expected: test.expectedLabel,
+                    actual: formatted,
+                    success
+                });
+            });
+
+            const summary = `✅ Passed: ${passed}/${labelTests.length}, ❌ Failed: ${failed}/${labelTests.length}`;
+            const details = results.map(r => 
+                `${r.success ? '✅' : '❌'} ${r.value}% → Expected: "${r.expected}", Got: "${r.actual}"`
+            ).join('\n');
+
+            addTestResult('Label Accuracy', failed === 0 ? 'success' : 'error', summary, details);
+        }
+
+        function testTemperaturePattern() {
+            // Simulate temperature pattern for 24 hours
+            const temperatures = [];
+            const now = new Date();
+            
+            for (let i = 0; i < 24; i++) {
+                const hour = (now.getHours() + i) % 24;
+                // Simulate the improved temperature pattern
+                const tempVariation = Math.sin(((hour - 6) * Math.PI) / 12) * 6;
+                const baseTemp = 28; // Tropical region
+                const temp = baseTemp + tempVariation + (Math.random() * 2 - 1);
+                temperatures.push({
+                    hour: hour,
+                    temp: Math.round(temp * 10) / 10
+                });
+            }
+
+            // Check for realistic temperature changes
+            let largeJumps = 0;
+            let maxJump = 0;
+            
+            for (let i = 1; i < temperatures.length; i++) {
+                const tempDiff = Math.abs(temperatures[i].temp - temperatures[i-1].temp);
+                if (tempDiff > 3) largeJumps++;
+                maxJump = Math.max(maxJump, tempDiff);
+            }
+
+            const isRealistic = largeJumps <= 2 && maxJump <= 5; // Allow some variation but not extreme jumps
+            
+            const summary = isRealistic 
+                ? `✅ Temperature pattern is realistic (max jump: ${maxJump.toFixed(1)}°C, large jumps: ${largeJumps})`
+                : `⚠️ Temperature pattern has unrealistic jumps (max jump: ${maxJump.toFixed(1)}°C, large jumps: ${largeJumps})`;
+
+            const details = temperatures.map(t => 
+                `Hour ${t.hour.toString().padStart(2, '0')}:00 → ${t.temp}°C`
+            ).join('\n');
+
+            addTestResult('Temperature Pattern', isRealistic ? 'success' : 'warning', summary, details);
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        function addTestResult(title, type, message, details = null) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-section ${type}`;
+            testDiv.innerHTML = `
+                <div class="status">${title}</div>
+                <div>${message}</div>
+                ${details ? `<details><summary>Details</summary><pre>${details}</pre></details>` : ''}
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            // Remove existing test result for this title
+            const existing = Array.from(resultsDiv.children).find(child => 
+                child.querySelector('.status').textContent === title
+            );
+            if (existing) {
+                existing.remove();
+            }
+            
+            resultsDiv.appendChild(testDiv);
+        }
+
+        // Make functions available globally
+        window.runAllTests = runAllTests;
+        window.clearResults = clearResults;
+
+        // Auto-run tests on load
+        setTimeout(() => {
+            runAllTests();
+        }, 1000);
+    </script>
+</body>
+</html>

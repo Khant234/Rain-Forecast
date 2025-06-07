@@ -7,11 +7,12 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
 
   useEffect(() => {
     const calculateRainTiming = () => {
-      if (!weatherData?.minuteData?.data?.timelines?.[0]?.intervals) {
+      // Use hourly data instead of minute data since we don't have minute data
+      if (!weatherData || !Array.isArray(weatherData)) {
         return;
       }
 
-      const intervals = weatherData.minuteData.data.timelines[0].intervals;
+      const intervals = weatherData;
       const now = new Date();
 
       // Find the next rain event
@@ -62,20 +63,20 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
 
   const formatTime = (ms) => {
     if (!ms) return null;
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
 
     if (language === "mm") {
-      if (minutes > 0) {
-        return `${minutes} မိနစ် ${seconds} စက္ကန့်`;
+      if (hours > 0) {
+        return `${hours} နာရီ ${minutes} မိနစ်`;
       }
-      return `${seconds} စက္ကန့်`;
+      return `${minutes} မိနစ်`;
     }
 
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
     }
-    return `${seconds}s`;
+    return `${minutes}m`;
   };
 
   if (!timeToRain || !rainDuration) {

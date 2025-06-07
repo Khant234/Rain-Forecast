@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather API Connection Test</h1>
+    
+    <div>
+        <button onclick="testDirectAPI()">Test Direct Backend API (Port 5000)</button>
+        <button onclick="testProxyAPI()">Test Frontend Proxy (Port 3001)</button>
+        <button onclick="testBothAPIs()">Test Both APIs</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        function addResult(title, status, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <p>${message}</p>
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        async function testDirectAPI() {
+            clearResults();
+            addResult('Direct Backend API Test', 'loading', 'Testing connection to http://localhost:5000/api/weather...');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/weather?lat=16.8409&lon=96.1735&fields=temperature,humidity&timesteps=1h');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('Direct Backend API Test', 'success', 'Successfully connected to backend API!', data);
+            } catch (error) {
+                addResult('Direct Backend API Test', 'error', `Failed to connect to backend API: ${error.message}`);
+            }
+        }
+
+        async function testProxyAPI() {
+            clearResults();
+            addResult('Frontend Proxy Test', 'loading', 'Testing connection through Vite proxy...');
+            
+            try {
+                const response = await fetch('/api/weather?lat=16.8409&lon=96.1735&fields=temperature,humidity&timesteps=1h');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('Frontend Proxy Test', 'success', 'Successfully connected through Vite proxy!', data);
+            } catch (error) {
+                addResult('Frontend Proxy Test', 'error', `Failed to connect through proxy: ${error.message}`);
+            }
+        }
+
+        async function testBothAPIs() {
+            clearResults();
+            await testDirectAPI();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            await testProxyAPI();
+        }
+
+        // Auto-run test on page load
+        window.onload = () => {
+            testBothAPIs();
+        };
+    </script>
+</body>
+</html>

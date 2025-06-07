@@ -105,17 +105,9 @@ function cacheData(lat, lon, data) {
 // Fetch from Tomorrow.io
 async function fetchFromTomorrowIO(lat, lon, apiKey) {
   const fields = [
-    "precipitationProbability",
-    "precipitationType",
-    "precipitationIntensity",
-    "temperature",
-    "temperatureApparent",
-    "humidity",
-    "windSpeed",
-    "windDirection",
-    "weatherCode",
-    "visibility",
-    "cloudCover"
+    "temperature", "temperatureApparent", "humidity", "windSpeed",
+    "windDirection", "weatherCode", "precipitationProbability", "precipitationType",
+    "pressureSurfaceLevel", "uvIndex", "visibility", "sunriseTime", "sunsetTime"
   ];
   
   const now = new Date();
@@ -123,7 +115,7 @@ async function fetchFromTomorrowIO(lat, lon, apiKey) {
     apikey: apiKey,
     location: `${lat},${lon}`,
     fields: fields.join(","),
-    timesteps: "1h",
+    timesteps: "1h,1d",
     startTime: now.toISOString(),
     endTime: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
     units: "metric"
@@ -139,11 +131,11 @@ async function fetchFromTomorrowIO(lat, lon, apiKey) {
   return response.json();
 }
 
-// Main weather endpoint
-app.get('/api/weather/:lat/:lon', async (req, res) => {
+// Main weather endpoint - compatible with existing frontend
+app.get('/api/weather', async (req, res) => {
   try {
-    const lat = parseFloat(req.params.lat);
-    const lon = parseFloat(req.params.lon);
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
     
     if (isNaN(lat) || isNaN(lon)) {
       return res.status(400).json({ error: 'Invalid coordinates' });
@@ -175,7 +167,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
     }
     
     // Fetch from API
-    console.log(`🔄 API call for: ${lat},${lon}`);
+    console.log(`🔄 API call for: ${lat},${lon} using key ending in ...${apiKey.key.slice(-4)}`);
     const data = await fetchFromTomorrowIO(lat, lon, apiKey.key);
     
     // Update counters
@@ -229,26 +221,9 @@ app.get('/api/stats', (req, res) => {
       exact: caches.exact.keys().length,
       grid5km: caches.grid5km.keys().length
     },
-    estimatedUsers: Math.floor(stats.requests / 10), // Assume 10 requests per user
+    estimatedUsers: Math.floor(stats.requests / 10),
     maxCapacity: Math.floor(1000 * (100 / (100 - parseFloat(cacheHitRate))))
   });
-});
-
-// In-memory alert registrations (for demo; use a DB in production)
-const rainAlerts = [];
-
-// Register for rain alerts
-app.post('/api/alerts', (req, res) => {
-  const { email, lat, lon } = req.body;
-  if (!email || typeof lat !== 'number' || typeof lon !== 'number') {
-    return res.status(400).json({ error: 'Missing or invalid email/lat/lon' });
-  }
-  // Prevent duplicate registration
-  if (rainAlerts.some(a => a.email === email && a.lat === lat && a.lon === lon)) {
-    return res.status(409).json({ error: 'Already registered for this location' });
-  }
-  rainAlerts.push({ email, lat, lon });
-  res.json({ success: true, message: 'Registered for rain alerts', email, lat, lon });
 });
 
 // Health check
@@ -256,39 +231,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Scheduled job: check rain forecast for alerts every 30 minutes
-setInterval(async () => {
-  if (rainAlerts.length === 0) return;
-  console.log(`\n⏰ Checking rain alerts for ${rainAlerts.length} users...`);
-  for (const alert of rainAlerts) {
-    try {
-      const apiKey = getAvailableApiKey();
-      if (!apiKey) {
-        console.log('❌ All API keys exhausted (alerts check)');
-        break;
-      }
-      const data = await fetchFromTomorrowIO(alert.lat, alert.lon, apiKey.key);
-      // Check for rain in the next 6 hours
-      const timelines = data.data?.timelines?.hourly || [];
-      const rainSoon = timelines.some(t => {
-        const precipProb = t.values?.precipitationProbability || 0;
-        const precipType = t.values?.precipitationType || 0;
-        // PrecipitationType: 1 = Rain (see Tomorrow.io docs)
-        return precipProb >= 50 && precipType === 1;
-      });
-      if (rainSoon) {
-        // Placeholder for sending email
-        console.log(`📧 Would send rain alert to ${alert.email} for (${alert.lat},${alert.lon})`);
-      }
-    } catch (err) {
-      console.error(`Error checking alert for ${alert.email}:`, err.message);
-    }
-  }
-}, 30 * 60 * 1000); // Every 30 minutes
-
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Weather proxy server running on port ${PORT}`);
   console.log(`📊 Stats available at http://localhost:${PORT}/api/stats`);
   console.log(`🔑 Using ${API_KEYS.length} API keys`);
+  console.log(`💾 Cache levels: exact (1h), grid5km (2h), city (4h)`);
 });

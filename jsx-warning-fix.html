@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSX Warning Fix - React App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .fix-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .before {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .after {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ JSX Warning Fix - React App</h1>
+    
+    <div class="fix-section">
+        <h2>Problem Fixed: Non-boolean JSX Attribute Warning</h2>
+        
+        <div class="warning">
+            <strong>Original Warning:</strong><br>
+            <code>Warning: Received `true` for a non-boolean attribute `jsx`. If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}.</code>
+        </div>
+        
+        <div class="success">
+            <strong>✅ Fixed:</strong> Removed styled-jsx syntax and replaced with proper CSS solutions compatible with Vite/React.
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>Root Cause Analysis</h2>
+        
+        <p>The warning was caused by using <strong>styled-jsx</strong> syntax in a Vite/React project:</p>
+        
+        <div class="code">
+&lt;style jsx&gt;{`
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+`}&lt;/style&gt;
+        </div>
+        
+        <p><strong>Issue:</strong> The <code>jsx</code> attribute is specific to Next.js's styled-jsx library. In a regular React/Vite project, this attribute gets passed to the DOM as a regular HTML attribute, causing React to warn about non-boolean attributes.</p>
+    </div>
+
+    <div class="fix-section">
+        <h2>Solution Applied</h2>
+        
+        <div class="before-after">
+            <div class="before">
+                <h3>❌ Before (Problematic)</h3>
+                <div class="code">
+&lt;div className="overflow-x-auto hide-scrollbar"&gt;
+  {/* content */}
+&lt;/div&gt;
+
+&lt;style jsx&gt;{`
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+`}&lt;/style&gt;
+                </div>
+            </div>
+            
+            <div class="after">
+                <h3>✅ After (Fixed)</h3>
+                <div class="code">
+&lt;div 
+  className="overflow-x-auto"
+  style={{ 
+    scrollSnapType: "x mandatory",
+    msOverflowStyle: "none",
+    scrollbarWidth: "none"
+  }}
+&gt;
+  {/* content */}
+&lt;/div&gt;
+
+/* In src/index.css */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>Changes Made</h2>
+        
+        <h3>1. Removed styled-jsx syntax</h3>
+        <ul>
+            <li>Eliminated <code>&lt;style jsx&gt;</code> tags from HourlyTimeline components</li>
+            <li>Removed <code>hide-scrollbar</code> class references</li>
+        </ul>
+        
+        <h3>2. Added inline styles for cross-browser compatibility</h3>
+        <ul>
+            <li><code>msOverflowStyle: "none"</code> - Hides scrollbar in IE/Edge</li>
+            <li><code>scrollbarWidth: "none"</code> - Hides scrollbar in Firefox</li>
+        </ul>
+        
+        <h3>3. Added global CSS for WebKit browsers</h3>
+        <ul>
+            <li>Added CSS rule to <code>src/index.css</code> to hide scrollbars in Chrome/Safari</li>
+            <li>Targets <code>.overflow-x-auto::-webkit-scrollbar</code></li>
+        </ul>
+        
+        <h3>4. Updated affected files</h3>
+        <ul>
+            <li><code>src/components/HourlyTimeline.jsx</code></li>
+            <li><code>src/Component/HourlyTimeline.jsx</code></li>
+            <li><code>src/index.css</code></li>
+        </ul>
+    </div>
+
+    <div class="fix-section">
+        <h2>Benefits of the Fix</h2>
+        
+        <ul>
+            <li>✅ <strong>No more React warnings</strong> - Clean console output</li>
+            <li>✅ <strong>Better compatibility</strong> - Works with Vite/React instead of Next.js-specific syntax</li>
+            <li>✅ <strong>Cross-browser support</strong> - Scrollbar hiding works in all major browsers</li>
+            <li>✅ <strong>Cleaner code</strong> - Uses standard CSS approaches</li>
+            <li>✅ <strong>Performance</strong> - No runtime style injection</li>
+        </ul>
+    </div>
+
+    <div class="fix-section">
+        <h2>Testing the Fix</h2>
+        
+        <p>To verify the fix is working:</p>
+        <ol>
+            <li>Open the React app in your browser</li>
+            <li>Open browser developer tools (F12)</li>
+            <li>Check the Console tab - no JSX warnings should appear</li>
+            <li>Verify that horizontal scrolling in the hourly timeline still works</li>
+            <li>Confirm that scrollbars are hidden in the timeline component</li>
+        </ol>
+        
+        <div class="success">
+            <strong>Expected Result:</strong> The app should work exactly the same as before, but without any React warnings in the console.
+        </div>
+    </div>
+
+    <div class="fix-section">
+        <h2>Alternative Solutions</h2>
+        
+        <p>Other ways this could have been fixed:</p>
+        
+        <h3>Option 1: CSS Modules</h3>
+        <div class="code">
+// HourlyTimeline.module.css
+.hideScrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hideScrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+// Component
+import styles from './HourlyTimeline.module.css';
+&lt;div className={`overflow-x-auto ${styles.hideScrollbar}`}&gt;
+        </div>
+        
+        <h3>Option 2: Styled Components</h3>
+        <div class="code">
+import styled from 'styled-components';
+
+const ScrollContainer = styled.div`
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+        </div>
+        
+        <h3>Option 3: Tailwind CSS Plugin</h3>
+        <div class="code">
+// tailwind.config.js
+module.exports = {
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.hide-scrollbar': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }
+      })
+    }
+  ]
+}
+        </div>
+    </div>
+</body>
+</html>
