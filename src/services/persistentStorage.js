@@ -6,27 +6,27 @@
 
 // Storage keys
 const STORAGE_KEYS = {
-  WEATHER_DATA: 'weather_data_v2',
-  LOCATION_DATA: 'location_data_v2',
-  USER_PREFERENCES: 'user_preferences_v2',
-  NOTIFICATION_SETTINGS: 'notification_settings_v2',
-  CACHE_METADATA: 'cache_metadata_v2'
+  WEATHER_DATA: "weather_data_v2",
+  LOCATION_DATA: "location_data_v2",
+  USER_PREFERENCES: "user_preferences_v2",
+  NOTIFICATION_SETTINGS: "notification_settings_v2",
+  CACHE_METADATA: "cache_metadata_v2",
 };
 
 // Cache duration policies (in milliseconds)
 const CACHE_DURATIONS = {
-  WEATHER_DATA: 30 * 60 * 1000,      // 30 minutes
-  LOCATION_DATA: 60 * 60 * 1000,     // 1 hour
+  WEATHER_DATA: 30 * 60 * 1000, // 30 minutes
+  LOCATION_DATA: 60 * 60 * 1000, // 1 hour
   USER_PREFERENCES: 7 * 24 * 60 * 60 * 1000, // 7 days
   NOTIFICATION_SETTINGS: 30 * 24 * 60 * 60 * 1000, // 30 days
-  STALE_THRESHOLD: 5 * 60 * 1000     // 5 minutes (for background refresh)
+  STALE_THRESHOLD: 5 * 60 * 1000, // 5 minutes (for background refresh)
 };
 
 // Storage quota limits
 const STORAGE_LIMITS = {
   MAX_WEATHER_ENTRIES: 5,
-  MAX_TOTAL_SIZE: 5 * 1024 * 1024,   // 5MB
-  CLEANUP_THRESHOLD: 0.8              // Clean up when 80% full
+  MAX_TOTAL_SIZE: 5 * 1024 * 1024, // 5MB
+  CLEANUP_THRESHOLD: 0.8, // Clean up when 80% full
 };
 
 /**
@@ -36,23 +36,28 @@ class StorageManager {
   constructor() {
     this.isAvailable = this.checkStorageAvailability();
     this.storageType = this.determineStorageType();
+    this._isUpdatingMetadata = false; // Recursion guard flag
+    this._recursionDepth = 0; // Track recursion depth
+    this._maxRecursionDepth = 10; // Maximum allowed recursion depth
   }
 
   checkStorageAvailability() {
     try {
-      const test = '__storage_test__';
+      const test = "__storage_test__";
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
       return true;
     } catch (e) {
-      console.warn('localStorage not available, falling back to sessionStorage');
+      console.warn(
+        "localStorage not available, falling back to sessionStorage"
+      );
       try {
-        const test = '__storage_test__';
+        const test = "__storage_test__";
         sessionStorage.setItem(test, test);
         sessionStorage.removeItem(test);
         return true;
       } catch (e) {
-        console.error('No storage available');
+        console.error("No storage available");
         return false;
       }
     }
@@ -60,8 +65,8 @@ class StorageManager {
 
   determineStorageType() {
     try {
-      localStorage.setItem('__test__', '__test__');
-      localStorage.removeItem('__test__');
+      localStorage.setItem("__test__", "__test__");
+      localStorage.removeItem("__test__");
       return localStorage;
     } catch (e) {
       return sessionStorage;
@@ -80,30 +85,97 @@ class StorageManager {
     }
   }
 
-  setItem(key, value) {
+  /**
+   * Check for potential stack overflow
+   */
+  _checkRecursionDepth() {
+    this._recursionDepth++;
+    if (this._recursionDepth > this._maxRecursionDepth) {
+      this._recursionDepth = 0;
+      throw new Error(
+        "Maximum recursion depth exceeded - potential infinite loop detected"
+      );
+    }
+  }
+
+  /**
+   * Reset recursion depth counter
+   */
+  _resetRecursionDepth() {
+    this._recursionDepth = 0;
+  }
+
+  /**
+   * Direct storage write without metadata updates (used internally to prevent recursion)
+   */
+  _setItemDirect(key, value) {
     if (!this.isAvailable) return false;
     try {
       const serialized = JSON.stringify(value);
-      
+      this.storageType.setItem(key, serialized);
+      return true;
+    } catch (error) {
+      console.error(`Error writing directly to storage (${key}):`, error);
+      return false;
+    }
+  }
+
+  setItem(key, value) {
+    if (!this.isAvailable) return false;
+
+    // Prevent infinite recursion when updating metadata
+    if (this._isUpdatingMetadata && key === STORAGE_KEYS.CACHE_METADATA) {
+      return this._setItemDirect(key, value);
+    }
+
+    try {
+      // Check for potential stack overflow
+      this._checkRecursionDepth();
+
+      const serialized = JSON.stringify(value);
+
       // Check storage quota before writing
       if (this.checkStorageQuota(serialized.length)) {
         this.storageType.setItem(key, serialized);
-        this.updateCacheMetadata(key, serialized.length);
+        // Only update metadata for non-metadata keys to prevent recursion
+        if (key !== STORAGE_KEYS.CACHE_METADATA) {
+          this.updateCacheMetadata(key, serialized.length);
+        }
+        this._resetRecursionDepth();
         return true;
       } else {
-        console.warn('Storage quota exceeded, cleaning up...');
+        console.warn("Storage quota exceeded, cleaning up...");
         this.cleanupStorage();
         // Try again after cleanup
         if (this.checkStorageQuota(serialized.length)) {
           this.storageType.setItem(key, serialized);
-          this.updateCacheMetadata(key, serialized.length);
+          // Only update metadata for non-metadata keys to prevent recursion
+          if (key !== STORAGE_KEYS.CACHE_METADATA) {
+            this.updateCacheMetadata(key, serialized.length);
+          }
+          this._resetRecursionDepth();
           return true;
         }
       }
+      this._resetRecursionDepth();
       return false;
     } catch (error) {
+      this._resetRecursionDepth();
       console.error(`Error writing to storage (${key}):`, error);
-      if (error.name === 'QuotaExceededError') {
+
+      // Handle stack overflow specifically
+      if (
+        error.message.includes("Maximum recursion depth exceeded") ||
+        error.name === "RangeError" ||
+        error.message.includes("Maximum call stack size exceeded")
+      ) {
+        console.error(
+          "🚨 Stack overflow detected in storage operation - breaking recursion"
+        );
+        return false;
+      }
+
+      if (error.name === "QuotaExceededError") {
         this.cleanupStorage();
         return this.setItem(key, value); // Retry once
       }
@@ -115,7 +187,10 @@ class StorageManager {
     if (!this.isAvailable) return;
     try {
       this.storageType.removeItem(key);
-      this.updateCacheMetadata(key, 0, true);
+      // Only update metadata for non-metadata keys to prevent recursion
+      if (key !== STORAGE_KEYS.CACHE_METADATA) {
+        this.updateCacheMetadata(key, 0, true);
+      }
     } catch (error) {
       console.error(`Error removing from storage (${key}):`, error);
     }
@@ -124,7 +199,7 @@ class StorageManager {
   checkStorageQuota(newDataSize) {
     try {
       const used = this.getStorageUsage();
-      return (used + newDataSize) < STORAGE_LIMITS.MAX_TOTAL_SIZE;
+      return used + newDataSize < STORAGE_LIMITS.MAX_TOTAL_SIZE;
     } catch (error) {
       return true; // Assume it's okay if we can't check
     }
@@ -141,41 +216,59 @@ class StorageManager {
   }
 
   updateCacheMetadata(key, size, isRemoval = false) {
-    const metadata = this.getItem(STORAGE_KEYS.CACHE_METADATA) || {};
-    if (isRemoval) {
-      delete metadata[key];
-    } else {
-      metadata[key] = {
-        size,
-        lastAccessed: Date.now()
-      };
+    // Prevent infinite recursion by setting guard flag
+    if (this._isUpdatingMetadata) {
+      console.warn("Skipping metadata update to prevent recursion");
+      return;
     }
-    this.setItem(STORAGE_KEYS.CACHE_METADATA, metadata);
+
+    try {
+      this._isUpdatingMetadata = true;
+
+      const metadata = this.getItem(STORAGE_KEYS.CACHE_METADATA) || {};
+      if (isRemoval) {
+        delete metadata[key];
+      } else {
+        metadata[key] = {
+          size,
+          lastAccessed: Date.now(),
+        };
+      }
+
+      // Use direct storage to avoid recursion
+      this._setItemDirect(STORAGE_KEYS.CACHE_METADATA, metadata);
+    } catch (error) {
+      console.error("Error updating cache metadata:", error);
+    } finally {
+      this._isUpdatingMetadata = false;
+    }
   }
 
   cleanupStorage() {
-    console.log('🧹 Cleaning up storage...');
+    console.log("🧹 Cleaning up storage...");
     const metadata = this.getItem(STORAGE_KEYS.CACHE_METADATA) || {};
-    
+
     // Sort by last accessed time (oldest first)
-    const entries = Object.entries(metadata)
-      .sort(([,a], [,b]) => a.lastAccessed - b.lastAccessed);
-    
+    const entries = Object.entries(metadata).sort(
+      ([, a], [, b]) => a.lastAccessed - b.lastAccessed
+    );
+
     // Remove oldest entries until we're under the threshold
     const currentUsage = this.getStorageUsage();
-    const targetUsage = STORAGE_LIMITS.MAX_TOTAL_SIZE * STORAGE_LIMITS.CLEANUP_THRESHOLD;
-    
+    const targetUsage =
+      STORAGE_LIMITS.MAX_TOTAL_SIZE * STORAGE_LIMITS.CLEANUP_THRESHOLD;
+
     let removedSize = 0;
     for (const [key, data] of entries) {
       if (currentUsage - removedSize <= targetUsage) break;
-      
+
       // Don't remove critical data
-      if (!key.includes('weather_data') && !key.includes('location_data')) {
+      if (!key.includes("weather_data") && !key.includes("location_data")) {
         this.removeItem(key);
         removedSize += data.size;
       }
     }
-    
+
     console.log(`🧹 Cleaned up ${removedSize} bytes`);
   }
 }
@@ -195,12 +288,15 @@ export const weatherStorage = {
       locationKey,
       data: weatherData,
       timestamp: Date.now(),
-      version: '2.0'
+      version: "2.0",
     };
-    
-    const success = storage.setItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`, dataToStore);
+
+    const success = storage.setItem(
+      `${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`,
+      dataToStore
+    );
     if (success) {
-      console.log('💾 Weather data stored for:', locationKey);
+      console.log("💾 Weather data stored for:", locationKey);
     }
     return success;
   },
@@ -209,11 +305,13 @@ export const weatherStorage = {
    * Retrieve weather data for a location
    */
   getWeatherData(locationKey) {
-    const stored = storage.getItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`);
+    const stored = storage.getItem(
+      `${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`
+    );
     if (!stored) return null;
 
     const age = Date.now() - stored.timestamp;
-    
+
     // Return data with freshness info
     return {
       data: stored.data,
@@ -221,7 +319,7 @@ export const weatherStorage = {
       age,
       isFresh: age < CACHE_DURATIONS.WEATHER_DATA,
       isStale: age > CACHE_DURATIONS.STALE_THRESHOLD,
-      locationKey: stored.locationKey
+      locationKey: stored.locationKey,
     };
   },
 
@@ -241,7 +339,7 @@ export const weatherStorage = {
     for (let i = 0; i < storage.storageType.length; i++) {
       const key = storage.storageType.key(i);
       if (key && key.startsWith(STORAGE_KEYS.WEATHER_DATA)) {
-        const locationKey = key.replace(`${STORAGE_KEYS.WEATHER_DATA}_`, '');
+        const locationKey = key.replace(`${STORAGE_KEYS.WEATHER_DATA}_`, "");
         locations.push(locationKey);
       }
     }
@@ -254,15 +352,15 @@ export const weatherStorage = {
   clearOldWeatherData() {
     const locations = this.getAllWeatherLocations();
     const now = Date.now();
-    
-    locations.forEach(locationKey => {
+
+    locations.forEach((locationKey) => {
       const stored = this.getWeatherData(locationKey);
-      if (stored && (now - stored.timestamp) > CACHE_DURATIONS.WEATHER_DATA * 2) {
+      if (stored && now - stored.timestamp > CACHE_DURATIONS.WEATHER_DATA * 2) {
         storage.removeItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`);
-        console.log('🗑️ Removed old weather data for:', locationKey);
+        console.log("🗑️ Removed old weather data for:", locationKey);
       }
     });
-  }
+  },
 };
 
 /**
@@ -273,12 +371,12 @@ export const locationStorage = {
     const dataToStore = {
       ...locationData,
       timestamp: Date.now(),
-      version: '2.0'
+      version: "2.0",
     };
-    
+
     const success = storage.setItem(STORAGE_KEYS.LOCATION_DATA, dataToStore);
     if (success) {
-      console.log('📍 Location data stored:', locationData.name || 'Unknown');
+      console.log("📍 Location data stored:", locationData.name || "Unknown");
     }
     return success;
   },
@@ -288,18 +386,18 @@ export const locationStorage = {
     if (!stored) return null;
 
     const age = Date.now() - stored.timestamp;
-    
+
     return {
       ...stored,
       age,
-      isFresh: age < CACHE_DURATIONS.LOCATION_DATA
+      isFresh: age < CACHE_DURATIONS.LOCATION_DATA,
     };
   },
 
   clearLocationData() {
     storage.removeItem(STORAGE_KEYS.LOCATION_DATA);
-    console.log('🗑️ Location data cleared');
-  }
+    console.log("🗑️ Location data cleared");
+  },
 };
 
 /**
@@ -319,32 +417,36 @@ export const storageUtils = {
   getStorageInfo() {
     return {
       isAvailable: storage.isAvailable,
-      storageType: storage.storageType === localStorage ? 'localStorage' : 'sessionStorage',
+      storageType:
+        storage.storageType === localStorage
+          ? "localStorage"
+          : "sessionStorage",
       usage: storage.getStorageUsage(),
       limit: STORAGE_LIMITS.MAX_TOTAL_SIZE,
-      usagePercentage: (storage.getStorageUsage() / STORAGE_LIMITS.MAX_TOTAL_SIZE) * 100
+      usagePercentage:
+        (storage.getStorageUsage() / STORAGE_LIMITS.MAX_TOTAL_SIZE) * 100,
     };
   },
 
   clearAllData() {
-    Object.values(STORAGE_KEYS).forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       storage.removeItem(key);
     });
-    
+
     // Clear weather data for all locations
-    weatherStorage.getAllWeatherLocations().forEach(locationKey => {
+    weatherStorage.getAllWeatherLocations().forEach((locationKey) => {
       storage.removeItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`);
     });
-    
-    console.log('🗑️ All persistent data cleared');
+
+    console.log("🗑️ All persistent data cleared");
   },
 
   performMaintenance() {
-    console.log('🔧 Performing storage maintenance...');
+    console.log("🔧 Performing storage maintenance...");
     weatherStorage.clearOldWeatherData();
     storage.cleanupStorage();
-    console.log('✅ Storage maintenance completed');
-  }
+    console.log("✅ Storage maintenance completed");
+  },
 };
 
 export default {
@@ -352,5 +454,5 @@ export default {
   locationStorage,
   generateLocationKey,
   storageUtils,
-  CACHE_DURATIONS
+  CACHE_DURATIONS,
 };

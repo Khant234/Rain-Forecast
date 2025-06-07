@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather API Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .success { background-color: #d4edda; border-left: 4px solid #28a745; }
+        .error { background-color: #f8d7da; border-left: 4px solid #dc3545; }
+        .info { background-color: #d1ecf1; border-left: 4px solid #17a2b8; }
+        .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-info { background-color: #e7f3ff; }
+        .log-error { background-color: #ffe7e7; }
+        .log-success { background-color: #e7ffe7; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Weather API Debug Tool</h1>
+    
+    <div class="container">
+        <h2>Test Configuration</h2>
+        <p><strong>Frontend URL:</strong> <span id="frontend-url"></span></p>
+        <p><strong>API Endpoint:</strong> <span id="api-endpoint"></span></p>
+        <p><strong>Backend Target:</strong> http://localhost:3001</p>
+    </div>
+
+    <div class="container">
+        <h2>Quick Tests</h2>
+        <button onclick="testDirectBackend()">Test Direct Backend</button>
+        <button onclick="testViteProxy()">Test Vite Proxy</button>
+        <button onclick="testWeatherService()">Test Weather Service Function</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <div class="container">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>Debug Logs</h2>
+        <div id="debug-logs"></div>
+    </div>
+
+    <script>
+        // Initialize page
+        document.getElementById('frontend-url').textContent = window.location.origin;
+        document.getElementById('api-endpoint').textContent = window.location.origin + '/api/weather';
+
+        let logContainer = document.getElementById('debug-logs');
+        let resultsContainer = document.getElementById('test-results');
+
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function addResult(title, content, type = 'info') {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `container ${type}`;
+            resultDiv.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsContainer.appendChild(resultDiv);
+        }
+
+        function clearLogs() {
+            logContainer.innerHTML = '';
+            resultsContainer.innerHTML = '';
+        }
+
+        async function testDirectBackend() {
+            addLog('Testing direct backend connection...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/weather', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: 16.8661,
+                        lon: 96.1951
+                    })
+                });
+
+                addLog(`Direct backend response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog('Direct backend test successful!', 'success');
+                    addResult('✅ Direct Backend Test', 
+                        `Status: ${response.status}\nData received: ${data.timelines?.length || 0} timelines\nMock: ${data.mock || false}`, 
+                        'success');
+                } else {
+                    const errorText = await response.text();
+                    addLog(`Direct backend test failed: ${response.status}`, 'error');
+                    addResult('❌ Direct Backend Test', 
+                        `Status: ${response.status}\nError: ${errorText}`, 
+                        'error');
+                }
+            } catch (error) {
+                addLog(`Direct backend test error: ${error.message}`, 'error');
+                addResult('❌ Direct Backend Test', 
+                    `Error: ${error.message}\nThis might be a CORS issue when testing direct backend from browser`, 
+                    'error');
+            }
+        }
+
+        async function testViteProxy() {
+            addLog('Testing Vite proxy...', 'info');
+            
+            try {
+                const response = await fetch('/api/weather', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: 16.8661,
+                        lon: 96.1951
+                    })
+                });
+
+                addLog(`Vite proxy response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog('Vite proxy test successful!', 'success');
+                    addResult('✅ Vite Proxy Test', 
+                        `Status: ${response.status}\nData received: ${data.timelines?.length || 0} timelines\nMock: ${data.mock || false}\nMessage: ${data.message || 'N/A'}`, 
+                        'success');
+                } else {
+                    const errorText = await response.text();
+                    addLog(`Vite proxy test failed: ${response.status}`, 'error');
+                    addResult('❌ Vite Proxy Test', 
+                        `Status: ${response.status}\nError: ${errorText}`, 
+                        'error');
+                }
+            } catch (error) {
+                addLog(`Vite proxy test error: ${error.message}`, 'error');
+                addResult('❌ Vite Proxy Test', 
+                    `Error: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        async function testWeatherService() {
+            addLog('Testing weather service simulation...', 'info');
+            
+            // Simulate the exact call that the React app would make
+            try {
+                // Test multiple coordinates
+                const testCases = [
+                    { lat: 16.8661, lon: 96.1951, name: 'Yangon' },
+                    { lat: 21.95456, lon: 96.1019904, name: 'Mandalay' },
+                    { lat: 19.7633, lon: 96.0785, name: 'Naypyidaw' }
+                ];
+
+                for (const testCase of testCases) {
+                    addLog(`Testing ${testCase.name} (${testCase.lat}, ${testCase.lon})...`, 'info');
+                    
+                    const response = await fetch('/api/weather', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            lat: testCase.lat,
+                            lon: testCase.lon
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        addLog(`${testCase.name} test successful!`, 'success');
+                        
+                        // Extract first interval data for display
+                        const firstInterval = data.timelines?.[0]?.intervals?.[0];
+                        const weatherInfo = firstInterval ? {
+                            temperature: Math.round(firstInterval.values.temperature),
+                            humidity: Math.round(firstInterval.values.humidity),
+                            rainChance: Math.round(firstInterval.values.precipitationProbability),
+                            windSpeed: Math.round(firstInterval.values.windSpeed)
+                        } : 'No data';
+
+                        addResult(`✅ ${testCase.name} Weather Test`, 
+                            `Coordinates: ${testCase.lat}, ${testCase.lon}\nStatus: ${response.status}\nTimelines: ${data.timelines?.length || 0}\nMock Data: ${data.mock || false}\nWeather: ${JSON.stringify(weatherInfo, null, 2)}`, 
+                            'success');
+                    } else {
+                        const errorText = await response.text();
+                        addLog(`${testCase.name} test failed: ${response.status}`, 'error');
+                        addResult(`❌ ${testCase.name} Weather Test`, 
+                            `Status: ${response.status}\nError: ${errorText}`, 
+                            'error');
+                    }
+                }
+            } catch (error) {
+                addLog(`Weather service test error: ${error.message}`, 'error');
+                addResult('❌ Weather Service Test', 
+                    `Error: ${error.message}`, 
+                    'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            addLog('Debug page loaded', 'info');
+            addLog(`Testing from: ${window.location.origin}`, 'info');
+            
+            setTimeout(() => {
+                addLog('Auto-running tests...', 'info');
+                testViteProxy();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
