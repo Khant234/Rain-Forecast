@@ -1,3 +1,22 @@
+// Import API tracker (only used for direct API calls)
+import { apiTracker } from "../utils/apiUsageTracker.js";
+
+// Import persistent storage system
+import {
+  weatherStorage,
+  locationStorage,
+  generateLocationKey,
+  storageUtils,
+} from "./persistentStorage.js";
+import {
+  dataValidators,
+  dataTransformers,
+  errorHandlers,
+} from "../utils/storageManager.js";
+
+// Import API provider management
+import apiProviderManager from "../utils/apiProviderManager.js";
+
 // Weather API configuration
 const USE_PROXY = true; // Enable proxy to avoid CORS issues
 const PROXY_URL = "/api/weather"; // Updated to use relative path that will be handled by Vite's proxy
@@ -17,16 +36,26 @@ const API_CONFIG = {
 console.log("Environment variables:", {
   VITE_TOMORROW_API_KEY: import.meta.env.VITE_TOMORROW_API_KEY,
   VITE_TOMORROW_IO_API_KEY: import.meta.env.VITE_TOMORROW_IO_API_KEY,
+  VITE_OPENWEATHERMAP_API_KEY: import.meta.env.VITE_OPENWEATHERMAP_API_KEY,
   VITE_OPENCAGE_API_KEY: import.meta.env.VITE_OPENCAGE_API_KEY,
   VITE_PROXY_URL: import.meta.env.VITE_PROXY_URL,
 });
 
 const TOMORROW_IO_API_KEY = import.meta.env.VITE_TOMORROW_IO_API_KEY;
+const OPENWEATHERMAP_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY;
 const OPENCAGE_API_KEY = import.meta.env.VITE_OPENCAGE_API_KEY;
 
 if (!TOMORROW_API_KEY) {
-  throw new Error(
-    "VITE_TOMORROW_API_KEY is not defined in the environment. Please add it to your .env.local file."
+  console.warn(
+    "VITE_TOMORROW_API_KEY is not defined in the environment. Tomorrow.io API will be unavailable."
+  );
+}
+if (
+  !OPENWEATHERMAP_API_KEY ||
+  OPENWEATHERMAP_API_KEY === "your_openweathermap_api_key_here"
+) {
+  console.warn(
+    "VITE_OPENWEATHERMAP_API_KEY is not configured. OpenWeatherMap API will be unavailable."
   );
 }
 if (!OPENCAGE_API_KEY || OPENCAGE_API_KEY === "your_opencage_api_key_here") {
@@ -34,22 +63,6 @@ if (!OPENCAGE_API_KEY || OPENCAGE_API_KEY === "your_opencage_api_key_here") {
     "VITE_OPENCAGE_API_KEY is not configured. Geocoding features will be disabled."
   );
 }
-
-// Import API tracker (only used for direct API calls)
-import { apiTracker } from "../utils/apiUsageTracker.js";
-
-// Import persistent storage system
-import {
-  weatherStorage,
-  locationStorage,
-  generateLocationKey,
-  storageUtils,
-} from "./persistentStorage.js";
-import {
-  dataValidators,
-  dataTransformers,
-  errorHandlers,
-} from "../utils/storageManager.js";
 
 export const fetchWeatherData = async (...args) => {
   try {
@@ -184,7 +197,15 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
       return data;
     } catch (error) {
       console.error("Proxy error:", error);
-      // Fall back to direct API if proxy fails
+      // If proxy fails with API error, generate mock data immediately
+      if (
+        error.message.includes("API error: 403") ||
+        error.message.includes("API error: 429")
+      ) {
+        console.log("API quota exceeded, using mock data");
+        return generateFallbackData(lat, lon);
+      }
+      // Fall back to direct API if proxy fails for other reasons
       console.log("Falling back to direct API...");
     }
   }
@@ -201,6 +222,10 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
     "weatherCode",
     "visibility",
     "cloudCover",
+    "uvIndex",
+    "pressureSurfaceLevel",
+    "sunriseTime",
+    "sunsetTime",
   ];
 
   const currentDate = new Date();
@@ -252,6 +277,18 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
       console.warn("Using cached data due to API error:", error.message);
       return weatherCache.data.hourlyData;
     }
+
+    // If API fails with quota/auth errors, generate mock data
+    if (
+      error.message.includes("Failed to fetch") ||
+      error.message.includes("403") ||
+      error.message.includes("429") ||
+      error.message.includes("API rate limit")
+    ) {
+      console.log("API unavailable, generating mock data");
+      return generateFallbackData(lat, lon);
+    }
+
     console.error(`Error fetching ${timestep} data:`, error);
     throw new Error(`Failed to fetch weather data: ${error.message}`);
   }
@@ -954,39 +991,65 @@ export const getWeatherData = async (lat, lon) => {
     return cachedData;
   }
 
-  // If we have stale persistent data, return it immediately and fetch fresh data in background
-  if (persistentData && persistentData.data) {
-    console.log(
-      "⚡ Using stale data, fetching fresh in background for:",
-      locationKey
-    );
-    // Fetch fresh data in background (don't await)
-    fetchFreshWeatherDataWithFallback(lat, lon, locationKey).catch((error) => {
-      console.error("Background fetch failed:", error);
-    });
-    return persistentData.data;
-  }
+  // Use provider management system for fetching new data
+  try {
+    console.log("🔄 Fetching fresh weather data with provider fallback...");
 
-  // No cached data available, fetch fresh data with enhanced error handling
-  return await fetchWeatherDataWithFallback(lat, lon, locationKey);
+    const result = await apiProviderManager.fetchWeatherDataWithFallback(
+      lat,
+      lon,
+      // Tomorrow.io fetch function
+      async (lat, lon) => {
+        return await fetchTomorrowIOData(lat, lon);
+      },
+      // Mock data fetch function
+      async (lat, lon) => {
+        return generateFallbackData(lat, lon);
+      }
+    );
+
+    console.log(`✅ Weather data fetched successfully from ${result.provider}`);
+
+    // Process and store the data
+    const processedData = await processWeatherData(result.data, lat, lon, locationKey);
+    return processedData;
+
+  } catch (error) {
+    console.error("❌ All weather data providers failed:", error);
+
+    // Try to return any cached data as last resort
+    const fallbackData = persistentData?.data || cachedData;
+    if (fallbackData) {
+      console.warn("🔄 Using any available cached data as last resort");
+      return fallbackData;
+    }
+
+    throw error;
+  }
 };
 
 /**
- * Enhanced weather data fetching with multiple fallback strategies
+ * Fetch weather data specifically from Tomorrow.io API
  */
-const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
+const fetchTomorrowIOData = async (lat, lon) => {
+  if (!TOMORROW_API_KEY) {
+    throw new Error("Tomorrow.io API key not configured");
+  }
+
   const fields = [
+    "precipitationProbability",
+    "precipitationType",
+    "precipitationIntensity",
     "temperature",
     "temperatureApparent",
     "humidity",
     "windSpeed",
     "windDirection",
     "weatherCode",
-    "precipitationProbability",
-    "precipitationType",
-    "pressureSurfaceLevel",
-    "uvIndex",
     "visibility",
+    "cloudCover",
+    "uvIndex",
+    "pressureSurfaceLevel",
     "sunriseTime",
     "sunsetTime",
   ];
@@ -996,7 +1059,7 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
   // Strategy 1: Try proxy first (if enabled)
   if (API_CONFIG.useProxy || USE_PROXY) {
     try {
-      console.log("🔄 Attempting proxy request...");
+      console.log("🔄 Attempting Tomorrow.io proxy request...");
 
       const response = await fetch("/api/weather", {
         method: "POST",
@@ -1011,59 +1074,43 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
 
       if (response.ok) {
         const data = await response.json();
-        return await processWeatherData(data, lat, lon, locationKey);
+        return data;
       } else {
-        console.warn(`Proxy failed with status: ${response.status}`);
+        console.warn(`Tomorrow.io proxy failed with status: ${response.status}`);
         throw new Error(`Proxy error: ${response.status}`);
       }
     } catch (proxyError) {
-      console.warn("Proxy request failed:", proxyError.message);
-      console.log("🔄 Falling back to direct API...");
+      console.warn("Tomorrow.io proxy request failed:", proxyError.message);
+      console.log("🔄 Falling back to direct Tomorrow.io API...");
     }
   }
 
   // Strategy 2: Direct API call
   try {
-    console.log("🔄 Attempting direct API request...");
+    console.log("🔄 Attempting direct Tomorrow.io API request...");
     const data = await fetchDirectAPI(lat, lon, fields, timesteps, units);
-    return await processWeatherData(data, lat, lon, locationKey);
+    return data;
   } catch (apiError) {
-    console.error("Direct API failed:", apiError.message);
-
-    // Strategy 3: Try to get any cached data as last resort
-    const persistentData = weatherStorage.getWeatherData(locationKey);
-    const cachedData = getClientCachedData(lat, lon);
-    const fallbackData = persistentData?.data || cachedData;
-
-    if (fallbackData) {
-      console.warn("🔄 Using any available cached data as last resort");
-      return fallbackData;
-    }
-
-    // Strategy 4: Generate mock data if enabled
-    if (API_CONFIG.enableMockData) {
-      console.warn("🎭 Generating mock weather data");
-      return generateMockWeatherData(lat, lon);
-    }
-
-    // All strategies failed
-    throw new Error(
-      "Weather service is temporarily unavailable. Please try again later."
-    );
+    console.error("Direct Tomorrow.io API failed:", apiError.message);
+    throw apiError;
   }
 };
 
-/**
- * Fetch fresh weather data in background with fallback
- */
-const fetchFreshWeatherDataWithFallback = async (lat, lon, locationKey) => {
-  try {
-    const freshData = await fetchWeatherDataWithFallback(lat, lon, locationKey);
-    console.log("🔄 Background refresh completed for:", locationKey);
-    return freshData;
-  } catch (error) {
-    console.error("Background fetch failed:", error);
+  // If we have stale persistent data, return it immediately and fetch fresh data in background
+  if (persistentData && persistentData.data) {
+    console.log(
+      "⚡ Using stale data, fetching fresh in background for:",
+      locationKey
+    );
+    // Fetch fresh data in background (don't await)
+    fetchFreshWeatherDataWithFallback(lat, lon, locationKey).catch((error) => {
+      console.error("Background fetch failed:", error);
+    });
+    return persistentData.data;
   }
+
+  // This function is now handled by the provider management system
+  throw new Error("This function should not be called directly. Use getWeatherData instead.");
 };
 
 /**
@@ -1228,15 +1275,247 @@ export const getTimezoneOffset = (lat, lon) => {
 };
 
 /**
- * Validate UV index for a specific time and location (exported for testing)
+ * Enhanced UV index validation with sunrise/sunset support and timezone conversion
  */
-export const validateUVIndex = (uvIndex, timestamp, lat, lon) => {
-  const timeInfo = isNighttime(timestamp, lat, lon);
-  if (timeInfo.isNight) {
+export const validateUVIndex = async (
+  uvIndex,
+  timestamp,
+  lat,
+  lon,
+  sunriseTime = null,
+  sunsetTime = null,
+  sourceTimezoneOffset = null
+) => {
+  const originalUV = uvIndex;
+
+  // First validate the UV index value itself
+  if (
+    originalUV === null ||
+    originalUV === undefined ||
+    isNaN(originalUV) ||
+    originalUV < 0 ||
+    originalUV > 15
+  ) {
+    console.warn(`☀️ Invalid UV index value: ${originalUV}, using fallback: 0`);
     return 0;
   }
-  // During daytime, ensure UV index is within valid range (0-15)
-  return Math.max(0, Math.min(15, Math.round(uvIndex || 0)));
+
+  try {
+    let isNight = false;
+    let validationMethod = "";
+
+    // Method 1: PRIORITIZE sunrise/sunset times if available (converted to Myanmar time)
+    if (sunriseTime && sunsetTime) {
+      const sunsetResult = isNighttimeAccurate(
+        timestamp,
+        sunriseTime,
+        sunsetTime,
+        sourceTimezoneOffset
+      );
+
+      if (sunsetResult !== null) {
+        // Sunrise/sunset validation successful
+        isNight = sunsetResult;
+        validationMethod = "Astronomical (Sunrise/Sunset)";
+
+        console.log(
+          `☀️ UV Validation (${validationMethod}): ${originalUV} → ${
+            isNight ? 0 : "validated"
+          } (${isNight ? "NIGHT" : "DAY"})`
+        );
+      } else {
+        // Sunrise/sunset validation failed, fall back to time-based
+        console.log(
+          "🌅 Sunrise/sunset validation failed, falling back to time-based calculation"
+        );
+        const timeInfo = isNighttime(timestamp, lat, lon);
+        isNight = timeInfo.isNight;
+        validationMethod = "Time-based (Fallback)";
+
+        console.log(
+          `☀️ UV Validation (${validationMethod}): ${originalUV} → ${
+            isNight ? 0 : "validated"
+          } (${isNight ? "NIGHT" : "DAY"})`
+        );
+      }
+    } else {
+      // Method 2: Use Myanmar time-based calculation when no sunrise/sunset data
+      console.log(
+        "🌅 No sunrise/sunset data available, using time-based calculation"
+      );
+      const timeInfo = isNighttime(timestamp, lat, lon);
+      isNight = timeInfo.isNight;
+      validationMethod = "Time-based (No astronomical data)";
+
+      console.log(
+        `☀️ UV Validation (${validationMethod}): ${originalUV} → ${
+          isNight ? 0 : "validated"
+        } (${isNight ? "NIGHT" : "DAY"})`
+      );
+    }
+
+    // Apply nighttime UV correction
+    if (isNight) {
+      console.log(
+        `🌙 Nighttime UV correction applied: ${originalUV} → 0 (${validationMethod})`
+      );
+      return 0;
+    }
+
+    // During daytime, ensure UV index is within valid range (0-15)
+    const validatedUV = Math.max(0, Math.min(15, Math.round(originalUV)));
+    console.log(
+      `☀️ UV Range Validation: ${originalUV} → ${validatedUV} (Myanmar daytime, ${validationMethod})`
+    );
+    return validatedUV;
+  } catch (error) {
+    console.error("❌ Error in UV validation:", error);
+    // Fallback: return 0 for safety
+    console.log(
+      `☀️ UV Validation (Error Fallback): ${originalUV} → 0 (safety fallback)`
+    );
+    return 0;
+  }
+};
+
+/**
+ * Enhanced sunrise/sunset validation with timezone conversion
+ */
+const isNighttimeAccurate = (
+  timestamp,
+  sunriseTime,
+  sunsetTime,
+  sourceTimezoneOffset = null
+) => {
+  // Validate input parameters
+  if (!sunriseTime || !sunsetTime) {
+    console.log(
+      "🌅 No sunrise/sunset data available, falling back to time-based calculation"
+    );
+    return null; // Return null to indicate fallback should be used
+  }
+
+  // Basic timestamp validation
+  if (!timestamp || !sunriseTime || !sunsetTime) {
+    console.warn("❌ Invalid timestamp format in sunrise/sunset validation");
+    return null;
+  }
+
+  try {
+    // Convert all times to Myanmar timezone for accurate comparison
+    const currentMyanmarTime = convertToMyanmarTime(
+      timestamp,
+      sourceTimezoneOffset
+    );
+    const sunriseMyanmarTime = convertToMyanmarTime(
+      sunriseTime,
+      sourceTimezoneOffset
+    );
+    const sunsetMyanmarTime = convertToMyanmarTime(
+      sunsetTime,
+      sourceTimezoneOffset
+    );
+
+    // Get time components for detailed logging
+    const currentComponents = getMyanmarTimeComponents(
+      timestamp,
+      sourceTimezoneOffset
+    );
+    const sunriseComponents = getMyanmarTimeComponents(
+      sunriseTime,
+      sourceTimezoneOffset
+    );
+    const sunsetComponents = getMyanmarTimeComponents(
+      sunsetTime,
+      sourceTimezoneOffset
+    );
+
+    // Determine if it's nighttime (before sunrise OR after sunset)
+    const isNight =
+      currentMyanmarTime < sunriseMyanmarTime ||
+      currentMyanmarTime > sunsetMyanmarTime;
+
+    // Comprehensive logging
+    console.log(
+      `🌅 Sunrise/Sunset check (Myanmar time): Current: ${
+        currentComponents.formattedTime
+      } vs Sunrise: ${sunriseComponents.formattedTime}, Sunset: ${
+        sunsetComponents.formattedTime
+      } → ${isNight ? "NIGHT" : "DAY"}`
+    );
+
+    if (sourceTimezoneOffset !== null) {
+      console.log(
+        `🕐 Astronomical data converted from VPN timezone UTC${
+          sourceTimezoneOffset >= 0 ? "+" : ""
+        }${sourceTimezoneOffset} to Myanmar UTC+6.5`
+      );
+    }
+
+    // Additional validation: ensure sunrise is before sunset
+    if (sunriseMyanmarTime >= sunsetMyanmarTime) {
+      console.warn(
+        "⚠️ Invalid sunrise/sunset data: sunrise is not before sunset, using fallback"
+      );
+      return null;
+    }
+
+    return isNight;
+  } catch (error) {
+    console.error("❌ Error in sunrise/sunset validation:", error);
+    return null; // Return null to trigger fallback
+  }
+};
+
+/**
+ * Convert any timezone to Myanmar local time (UTC+6.5)
+ */
+const convertToMyanmarTime = (timestamp, sourceTimezoneOffset = null) => {
+  const date = new Date(timestamp);
+
+  // If source timezone is provided, convert from that timezone to Myanmar time
+  if (sourceTimezoneOffset !== null) {
+    // Calculate the difference between source timezone and Myanmar timezone
+    const offsetDifference = 6.5 - sourceTimezoneOffset;
+    const myanmarTime = new Date(date.getTime() + offsetDifference * 3600000);
+
+    console.log(
+      `🕐 Timezone conversion: ${timestamp} (UTC${
+        sourceTimezoneOffset >= 0 ? "+" : ""
+      }${sourceTimezoneOffset}) → ${myanmarTime.toISOString()} (Myanmar UTC+6.5)`
+    );
+
+    return myanmarTime;
+  }
+
+  // If no source timezone, assume UTC and convert to Myanmar time
+  const utcTime = date.getTime() + date.getTimezoneOffset() * 60000;
+  const myanmarTime = new Date(utcTime + 6.5 * 3600000);
+
+  console.log(`🕐 UTC to Myanmar: ${timestamp} → ${myanmarTime.toISOString()}`);
+
+  return myanmarTime;
+};
+
+/**
+ * Get Myanmar local time components from any timestamp
+ */
+const getMyanmarTimeComponents = (timestamp, sourceTimezoneOffset = null) => {
+  const myanmarTime = convertToMyanmarTime(timestamp, sourceTimezoneOffset);
+
+  const hours = myanmarTime.getHours();
+  const minutes = myanmarTime.getMinutes();
+  const isNighttime = hours < 6 || hours >= 18;
+
+  return {
+    hours,
+    minutes,
+    isNighttime,
+    formattedTime: `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`,
+    timeOfDay: isNighttime ? "NIGHT" : "DAY",
+  };
 };
 
 /**
@@ -1540,6 +1819,54 @@ const mockGeocode = async (cityName) => {
 
   // No match found
   return null;
+};
+
+/**
+ * Get weather provider status and availability
+ */
+export const getWeatherProviderStatus = () => {
+  try {
+    return apiProviderManager.getProviderStatus();
+  } catch (error) {
+    console.error("Failed to get provider status:", error);
+    return {
+      providers: {},
+      availableProviders: [],
+      configuration: {
+        tomorrowIO: { configured: !!TOMORROW_API_KEY },
+        openWeatherMap: { configured: !!OPENWEATHERMAP_API_KEY },
+        mock: { configured: true },
+      },
+    };
+  }
+};
+
+/**
+ * Test all weather providers
+ */
+export const testWeatherProviders = async () => {
+  try {
+    return await apiProviderManager.testAllProviders();
+  } catch (error) {
+    console.error("Failed to test providers:", error);
+    return {
+      error: error.message,
+    };
+  }
+};
+
+/**
+ * Reset weather provider status (for testing/recovery)
+ */
+export const resetWeatherProviders = () => {
+  try {
+    apiProviderManager.resetProviderStatus();
+    console.log("✅ Weather provider status reset successfully");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reset provider status:", error);
+    return { success: false, error: error.message };
+  }
 };
 
 export const geocodeCity = async (cityName) => {
