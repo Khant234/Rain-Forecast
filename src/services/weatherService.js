@@ -1,12 +1,12 @@
 // Weather API configuration
-const USE_PROXY = false; // Disable proxy by default, enable direct API calls
+const USE_PROXY = true; // Enable proxy to avoid CORS issues
 const PROXY_URL = "/api/weather"; // Updated to use relative path that will be handled by Vite's proxy
 const TOMORROW_API_KEY = import.meta.env.VITE_TOMORROW_API_KEY;
 const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
 // Enhanced error handling and fallback configuration
 const API_CONFIG = {
-  useProxy: false, // Start with direct API calls
+  useProxy: true, // Use proxy to avoid CORS issues
   maxRetries: 3,
   retryDelay: 1000, // 1 second
   timeout: 10000, // 10 seconds
@@ -151,16 +151,16 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
   // Use proxy if enabled
   if (USE_PROXY) {
     try {
-      const proxyRequestUrl = new URL(PROXY_URL);
-      proxyRequestUrl.searchParams.append("lat", lat);
-      proxyRequestUrl.searchParams.append("lon", lon);
-
-      console.log(`Fetching from proxy: ${proxyRequestUrl.toString()}`);
-      const response = await fetch(proxyRequestUrl.toString(), {
-        method: "GET",
+      console.log(`Fetching from proxy: ${PROXY_URL}`);
+      const response = await fetch(PROXY_URL, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          lat: lat,
+          lon: lon,
+        }),
       });
 
       if (!response.ok) {
@@ -997,12 +997,16 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
   if (API_CONFIG.useProxy || USE_PROXY) {
     try {
       console.log("🔄 Attempting proxy request...");
-      const proxyUrl = `/api/weather?lat=${lat}&lon=${lon}&fields=${fields.join(
-        ","
-      )}&timesteps=${timesteps.join(",")}&units=${units}`;
 
-      const response = await fetch(proxyUrl, {
-        timeout: API_CONFIG.timeout,
+      const response = await fetch("/api/weather", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lat: lat,
+          lon: lon,
+        }),
       });
 
       if (response.ok) {

@@ -12,9 +12,10 @@ export default defineConfig({
     // Remove HTTPS for now - localhost should work with HTTP for GPS
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://localhost:3001", // Updated to match backend server port
         changeOrigin: true,
         secure: false,
+        // Don't rewrite the path - backend expects /api/weather
       },
     },
   },

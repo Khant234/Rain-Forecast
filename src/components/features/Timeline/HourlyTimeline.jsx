@@ -1,6 +1,7 @@
 import React from "react";
 import { format } from "date-fns";
 import WeatherAnimation from "../../common/WeatherAnimation";
+import { formatTemperature } from "../../../utils/weatherFormatter";
 
 const HourlyTimeline = ({ hourlyData, language }) => {
   const formatTime = (date) => {
@@ -58,8 +59,8 @@ const HourlyTimeline = ({ hourlyData, language }) => {
             </div>
             <div className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-100">
               {language === "mm"
-                ? `${hour.temperature}°C`
-                : `${hour.temperature}°C`}
+                ? `${formatTemperature(hour.temperature)}°C`
+                : `${formatTemperature(hour.temperature)}°C`}
             </div>
             <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 text-center">
               {language === "mm"

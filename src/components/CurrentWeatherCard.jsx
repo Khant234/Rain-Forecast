@@ -1,6 +1,13 @@
 import React from "react";
 import { Sun, Cloud, Wind, Droplets, Bell, BellOff } from "lucide-react";
 import { rainNotificationService } from "../services/notificationService";
+import {
+  formatWindSpeed,
+  formatHumidity,
+  formatUVIndex,
+  formatPressure,
+  formatTemperature,
+} from "../utils/weatherFormatter";
 
 const CurrentWeatherCard = ({ weather, darkMode }) => {
   const notificationSettings = rainNotificationService.getSettings();
@@ -65,10 +72,10 @@ const CurrentWeatherCard = ({ weather, darkMode }) => {
 
       <div className="mt-4 text-center">
         <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter">
-          {Math.round(temperature)}°C
+          {formatTemperature(temperature)}°C
         </h1>
         <p className="text-sm sm:text-base text-gray-400 mt-1">
-          Feels like {Math.round(feelsLike)}°C
+          Feels like {formatTemperature(feelsLike)}°C
         </p>
       </div>
 
@@ -76,26 +83,26 @@ const CurrentWeatherCard = ({ weather, darkMode }) => {
         <div className="flex items-center space-x-2">
           <Wind className="w-5 h-5 text-blue-500" />
           <div>
-            <p className="font-semibold">{windSpeed} km/h</p>
+            <p className="font-semibold">{formatWindSpeed(windSpeed)} km/h</p>
             <p className="text-gray-400">Wind</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           <Droplets className="w-5 h-5 text-cyan-500" />
           <div>
-            <p className="font-semibold">{humidity}%</p>
+            <p className="font-semibold">{formatHumidity(humidity)}%</p>
             <p className="text-gray-400">Humidity</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           <Sun className="w-5 h-5 text-orange-500" />
           <div>
-            <p className="font-semibold">{uvIndex}</p>
+            <p className="font-semibold">{formatUVIndex(uvIndex)}</p>
             <p className="text-gray-400">UV Index</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <p className="font-bold text-lg">{pressure} hPa</p>
+          <p className="font-bold text-lg">{formatPressure(pressure)} hPa</p>
           <p className="text-gray-400">Pressure</p>
         </div>
       </div>

@@ -142,6 +142,28 @@ const uvIndexUtils = {
  */
 export const dataTransformers = {
   /**
+   * Validate and sanitize temperature values
+   */
+  validateTemperature(temp, fallback = 25) {
+    if (temp === null || temp === undefined || isNaN(temp) || !isFinite(temp)) {
+      console.warn(
+        `🌡️ Invalid temperature detected: ${temp}, using fallback: ${fallback}°C`
+      );
+      return fallback;
+    }
+
+    // Ensure temperature is within reasonable range
+    if (temp < -100 || temp > 100) {
+      console.warn(
+        `🌡️ Temperature out of range: ${temp}°C, using fallback: ${fallback}°C`
+      );
+      return fallback;
+    }
+
+    return temp;
+  },
+
+  /**
    * Transform raw API data to application format
    */
   transformWeatherData(rawData, location) {
@@ -162,11 +184,15 @@ export const dataTransformers = {
     return {
       current: {
         location: location?.name || "Unknown Location",
-        temperature: Math.round(currentInterval.values.temperature || 0),
+        temperature: Math.round(
+          this.validateTemperature(currentInterval.values.temperature, 25)
+        ),
         feelsLike: Math.round(
-          currentInterval.values.temperatureApparent ||
-            currentInterval.values.temperature ||
-            0
+          this.validateTemperature(
+            currentInterval.values.temperatureApparent ||
+              currentInterval.values.temperature,
+            27
+          )
         ),
         condition: this.getWeatherCondition(currentInterval.values.weatherCode),
         weatherCode: currentInterval.values.weatherCode,
@@ -195,7 +221,9 @@ export const dataTransformers = {
       },
       hourly: hourlyTimeline.intervals.slice(0, 24).map((interval) => ({
         startTime: interval.startTime,
-        temperature: Math.round(interval.values.temperature || 0),
+        temperature: Math.round(
+          this.validateTemperature(interval.values.temperature, 25)
+        ),
         weatherCode: interval.values.weatherCode,
         precipitationProbability: Math.round(
           interval.values.precipitationProbability || 0
@@ -217,10 +245,16 @@ export const dataTransformers = {
         ? dailyTimeline.intervals.slice(0, 7).map((interval) => ({
             startTime: interval.startTime,
             temperatureMin: Math.round(
-              interval.values.temperatureMin || interval.values.temperature || 0
+              this.validateTemperature(
+                interval.values.temperatureMin || interval.values.temperature,
+                20
+              )
             ),
             temperatureMax: Math.round(
-              interval.values.temperatureMax || interval.values.temperature || 0
+              this.validateTemperature(
+                interval.values.temperatureMax || interval.values.temperature,
+                30
+              )
             ),
             weatherCodeMax:
               interval.values.weatherCodeMax || interval.values.weatherCode,

@@ -5,6 +5,7 @@ import {
   getRainChanceColorClass,
   normalizePrecipitationProbability,
 } from "../utils/rainChanceFormatter";
+import { formatTemperature } from "../utils/weatherFormatter";
 const HourlyTimeline = ({ data, language, darkMode }) => {
   const scrollRef = React.useRef(null);
 
@@ -130,7 +131,7 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
                 {getWeatherEmoji(interval)}
               </div>
               <div className="text-xs sm:text-sm font-bold">
-                {Math.round(interval.values.temperature)}°C
+                {formatTemperature(interval.values.temperature)}°C
               </div>
               <div
                 className={`text-[10px] sm:text-xs text-center ${getRainChanceColorClass(

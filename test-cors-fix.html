@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CORS Fix Test</h1>
+    <p>This page tests the CORS fix for the weather API proxy.</p>
+
+    <div class="test-section">
+        <h2>Backend Server Status</h2>
+        <button onclick="testBackendStatus()">Test Backend Connection</button>
+        <div id="backend-status">Click the button to test backend connection</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Proxy API Test</h2>
+        <button onclick="testProxyAPI()">Test Proxy API</button>
+        <div id="proxy-status">Click the button to test proxy API</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Weather Data Test</h2>
+        <button onclick="testWeatherData()">Test Weather Data (Yangon)</button>
+        <div id="weather-status">Click the button to test weather data</div>
+    </div>
+
+    <script>
+        async function testBackendStatus() {
+            const statusDiv = document.getElementById('backend-status');
+            statusDiv.className = 'loading';
+            statusDiv.innerHTML = '🔄 Testing backend connection...';
+
+            try {
+                const response = await fetch('http://localhost:3001/', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    statusDiv.className = 'success';
+                    statusDiv.innerHTML = '✅ Backend server is running and accessible';
+                } else {
+                    statusDiv.className = 'error';
+                    statusDiv.innerHTML = `❌ Backend responded with status: ${response.status}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `❌ Backend connection failed: ${error.message}`;
+            }
+        }
+
+        async function testProxyAPI() {
+            const statusDiv = document.getElementById('proxy-status');
+            statusDiv.className = 'loading';
+            statusDiv.innerHTML = '🔄 Testing proxy API...';
+
+            try {
+                const response = await fetch('/api/weather', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: 16.8661,
+                        lon: 96.1951
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.className = 'success';
+                    statusDiv.innerHTML = `✅ Proxy API working! Received data with ${data.timelines?.length || 0} timelines`;
+                } else {
+                    const errorText = await response.text();
+                    statusDiv.className = 'error';
+                    statusDiv.innerHTML = `❌ Proxy API failed with status ${response.status}: ${errorText}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `❌ Proxy API error: ${error.message}`;
+            }
+        }
+
+        async function testWeatherData() {
+            const statusDiv = document.getElementById('weather-status');
+            statusDiv.className = 'loading';
+            statusDiv.innerHTML = '🔄 Testing weather data fetch...';
+
+            try {
+                // Test the weather service function
+                const response = await fetch('/api/weather', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: 16.8661,  // Yangon coordinates
+                        lon: 96.1951
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.className = 'success';
+                    
+                    let html = '✅ Weather data received successfully!<br><br>';
+                    html += '<strong>Data Summary:</strong><br>';
+                    html += `• Timelines: ${data.timelines?.length || 0}<br>`;
+                    
+                    if (data.timelines && data.timelines[0] && data.timelines[0].intervals) {
+                        const firstInterval = data.timelines[0].intervals[0];
+                        html += `• First interval time: ${firstInterval.startTime}<br>`;
+                        html += `• Temperature: ${firstInterval.values.temperature}°C<br>`;
+                        html += `• Precipitation: ${firstInterval.values.precipitationProbability}%<br>`;
+                        html += `• Humidity: ${firstInterval.values.humidity}%<br>`;
+                    }
+                    
+                    html += '<br><strong>Raw Data (first 500 chars):</strong><br>';
+                    html += `<pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>`;
+                    
+                    statusDiv.innerHTML = html;
+                } else {
+                    const errorText = await response.text();
+                    statusDiv.className = 'error';
+                    statusDiv.innerHTML = `❌ Weather data fetch failed with status ${response.status}: ${errorText}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `❌ Weather data fetch error: ${error.message}`;
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            console.log('🔧 CORS Fix Test page loaded');
+            console.log('Current URL:', window.location.href);
+            console.log('Testing from port:', window.location.port);
+        });
+    </script>
+</body>
+</html>

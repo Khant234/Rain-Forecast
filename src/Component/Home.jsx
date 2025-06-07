@@ -22,6 +22,11 @@ import {
   getRainChanceColorClass,
   getRainChanceIcon,
 } from "../utils/rainChanceFormatter";
+import {
+  formatWindSpeed,
+  formatHumidity,
+  formatTemperature,
+} from "../utils/weatherFormatter";
 
 function Home() {
   const [loading, setLoading] = useState(true);
@@ -508,7 +513,7 @@ function Home() {
                 darkMode ? "text-white" : "text-gray-900"
               }`}
             >
-              {weatherData?.temperature ?? "--"}°
+              {formatTemperature(weatherData?.temperature) ?? "--"}°
             </div>
           </div>
           {/* Rain Countdown and Probability */}
@@ -579,7 +584,7 @@ function Home() {
                   darkMode ? "text-white" : "text-gray-800"
                 }`}
               >
-                {weatherData?.temperature}°C
+                {formatTemperature(weatherData?.temperature)}°C
               </div>
             </div>
             <div
@@ -600,7 +605,7 @@ function Home() {
                   darkMode ? "text-white" : "text-gray-800"
                 }`}
               >
-                {weatherData?.humidity}%
+                {formatHumidity(weatherData?.humidity)}%
               </div>
             </div>
             <div
@@ -621,7 +626,7 @@ function Home() {
                   darkMode ? "text-white" : "text-gray-800"
                 }`}
               >
-                {weatherData?.windSpeed} km/h
+                {formatWindSpeed(weatherData?.windSpeed)} km/h
               </div>
             </div>
             <div
