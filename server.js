@@ -116,6 +116,8 @@ setInterval(cleanCache, 15 * 60 * 1000);
 // Generate mock weather data when API is rate limited
 function generateMockWeatherData(lat, lon) {
   const now = new Date();
+  const sunrise = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+  const sunset = new Date(now.getTime() + 18 * 60 * 60 * 1000);
   
   // Simple mock data that matches the expected structure
   const mockData = {
@@ -140,8 +142,8 @@ function generateMockWeatherData(lat, lon) {
                 "pressureSurfaceLevel": 1013,
                 "uvIndex": 6,
                 "visibility": 15,
-                "sunriseTime": new Date(now.getTime() + 6 * 60 * 60 * 1000).toISOString(),
-                "sunsetTime": new Date(now.getTime() + 18 * 60 * 60 * 1000).toISOString()
+                "sunriseTime": sunrise.toISOString(),
+                "sunsetTime": sunset.toISOString()
               }
             },
             {
@@ -158,8 +160,8 @@ function generateMockWeatherData(lat, lon) {
                 "pressureSurfaceLevel": 1015,
                 "uvIndex": 5,
                 "visibility": 12,
-                "sunriseTime": new Date(now.getTime() + 30 * 60 * 60 * 1000).toISOString(),
-                "sunsetTime": new Date(now.getTime() + 42 * 60 * 60 * 1000).toISOString()
+                "sunriseTime": new Date(sunrise.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+                "sunsetTime": new Date(sunset.getTime() + 24 * 60 * 60 * 1000).toISOString()
               }
             }
           ]
@@ -196,8 +198,8 @@ function generateMockWeatherData(lat, lon) {
         "pressureSurfaceLevel": 1013,
         "uvIndex": isNight ? 0 : 6,
         "visibility": 15,
-        "sunriseTime": new Date(date.getTime() - (hour - 6) * 60 * 60 * 1000).toISOString(),
-        "sunsetTime": new Date(date.getTime() + (18 - hour) * 60 * 60 * 1000).toISOString()
+        "sunriseTime": sunrise.toISOString(),
+        "sunsetTime": sunset.toISOString()
       }
     });
   }
@@ -326,7 +328,7 @@ app.get("/api/weather", async (req, res) => {
     } else {
       res.status(500).json({
         error: "Internal server error",
-        details: error.message,
+        details: process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
   }

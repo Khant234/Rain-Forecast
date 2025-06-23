@@ -13,8 +13,17 @@ const RainHistory = ({ language, darkMode }) => {
   const [history, setHistory] = React.useState({});
 
   React.useEffect(() => {
-    const data = getRainHistory();
-    setHistory(data);
+    const fetchData = async () => {
+      try {
+        const data = await getRainHistory();
+        setHistory(data);
+      } catch (error) {
+        console.error("Error fetching rain history:", error);
+        // Handle error appropriately, e.g., display an error message to the user
+      }
+    };
+
+    fetchData();
   }, []);
 
   const formatDate = (dateStr) => {
@@ -29,7 +38,7 @@ const RainHistory = ({ language, darkMode }) => {
     .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
     .map(([date, data]) => ({
       date: formatDate(date),
-      value: data.totalPrecipitation,
+      value: data?.totalPrecipitation || 0, // Use optional chaining and default to 0
     }));
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -42,7 +51,7 @@ const RainHistory = ({ language, darkMode }) => {
         >
           <p className="font-medium text-xs sm:text-sm">{label}</p>
           <p className="text-[10px] sm:text-xs">
-            {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Probability"}:{" "}
+            {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Probability"}:{" " "
             {Math.round(payload[0].value)}%
           </p>
         </div>

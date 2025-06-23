@@ -316,32 +316,33 @@ function Home() {
         cityName: storedLocation.cityName,
       });
       setLoading(false);
-      try {
-        const cached = localStorage.getItem("lastWeatherData");
-        if (cached) {
-          const { data, intervals, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < CACHE_DURATION) {
-            setWeatherData(data);
-            let nextRain = null;
-            if (intervals && Array.isArray(intervals)) {
-              const now = new Date();
-              for (const interval of intervals) {
-                if (
-                  (interval.values.precipitationProbability > 60 ||
-                    (interval.values.precipitationType > 0 &&
-                      interval.values.precipitationProbability > 50)) &&
-                  new Date(interval.startTime) > now
-                ) {
-                  nextRain = new Date(interval.startTime);
-                  break;
-                }
-              }
-            }
-            setNextRainTime(nextRain);
-            return;
-          }
-        }
-      } catch (e) {}
+      // Remove this block to avoid displaying potentially stale data
+      // try {
+      //   const cached = localStorage.getItem("lastWeatherData");
+      //   if (cached) {
+      //     const { data, intervals, timestamp } = JSON.parse(cached);
+      //     if (Date.now() - timestamp < CACHE_DURATION) {
+      //       setWeatherData(data);
+      //       let nextRain = null;
+      //       if (intervals && Array.isArray(intervals)) {
+      //         const now = new Date();
+      //         for (const interval of intervals) {
+      //           if (
+      //             (interval.values.precipitationProbability > 60 ||
+      //               (interval.values.precipitationType > 0 &&
+      //                 interval.values.precipitationProbability > 50)) &&
+      //             new Date(interval.startTime) > now
+      //           ) {
+      //             nextRain = new Date(interval.startTime);
+      //             break;
+      //           }
+      //         }
+      //       }
+      //       setNextRainTime(nextRain);
+      //       return;
+      //     }
+      //   }
+      // } catch (e) {}
       fetchWeatherForLocation(
         storedLocation.lat,
         storedLocation.lon,

@@ -68,7 +68,7 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
 
     // Fallback: Only show rain icons for significant precipitation probability
     if (precipitationType > 0 && precipitationProbability > 60) return "🌧️";
-    if (precipitationProbability > 70) return "🌦️";
+    if (precipitationProbability > 70) return "🌧️";
 
     // Default to sunny for low precipitation probability
     return "☀️";

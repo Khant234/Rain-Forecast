@@ -34,10 +34,7 @@ export const useWeather = () => {
       const hourly = intervals.slice(0, 24).map((interval) => ({
         time: interval.startTime,
         temperature: Math.round(interval.values.temperature),
-        hasRain:
-          interval.values.precipitationProbability > 60 ||
-          (interval.values.precipitationType > 0 &&
-            interval.values.precipitationProbability > 50),
+        hasRain: interval.values.precipitationProbability > 60 || (interval.values.precipitationType > 0 && interval.values.precipitationProbability > 50),
         precipProbability: interval.values.precipitationProbability,
       }));
       setHourlyForecast(hourly);
@@ -61,12 +58,12 @@ export const useWeather = () => {
         // Send notification if rain is expected within 15 minutes
         const rainStartTime = new Date(nextRain.startTime);
         const timeUntilRain = (rainStartTime - new Date()) / (1000 * 60);
-        if (timeUntilRain <= 15 && timeUntilRain > 0) {
+        if (timeUntilRain <= 15 && timeUntilRain >= 0) { // corrected condition to include 0
           sendNotification({
             title: "🌧️ Rain Alert",
             body: `Rain expected at your location in ${Math.round(
               timeUntilRain
-            )} minutes. ☔ Stay dry!`,
+            )} minutes. ☔ Stay dry!`, // changed template literal for readability
           });
         }
       } else {

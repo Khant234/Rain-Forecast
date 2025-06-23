@@ -54,7 +54,7 @@ export const useRainAlerts = (weatherData, location, language) => {
           return {
             startTime: interval.startTime,
             precipitationProbability: interval.values.precipitationProbability || 0,
-            precipitationType: interval.values.precipitationType || 0,
+            precipitationType: interval.values.precipitationType || 'none',
             minutesUntilRain: Math.max(0, minutesUntilRain),
             lat: location.lat,
             lon: location.lon,
@@ -82,8 +82,18 @@ export const useRainAlerts = (weatherData, location, language) => {
       const currentEvents = new Set();
       
       for (const eventId of processedEventsRef.current) {
-        const eventTime = new Date(eventId.split('_')[0]);
-        if (eventTime > twoHoursAgo) {
+        try {
+          // Attempt to reliably extract the start time from the event ID
+          const parts = eventId.split('_');
+          const startTimeStr = parts[0]; // startTime
+          const eventTime = new Date(startTimeStr);
+
+          if (eventTime > twoHoursAgo) {
+            currentEvents.add(eventId);
+          }
+        } catch (timeParseError) {
+          console.error("Error parsing event time from eventId: ", eventId, timeParseError);
+          // If we can't parse the time, keep the event to avoid potential issues
           currentEvents.add(eventId);
         }
       }

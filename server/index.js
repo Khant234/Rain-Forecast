@@ -121,14 +121,19 @@ async function fetchFromTomorrowIO(lat, lon, apiKey) {
     units: "metric"
   });
   
-  const response = await fetch(`https://api.tomorrow.io/v4/timelines?${params}`);
+  try {
+    const response = await fetch(`https://api.tomorrow.io/v4/timelines?${params}`);
   
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `API error: ${response.status}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `API error: ${response.status}`);
+    }
+  
+    return response.json();
+  } catch (error) {
+    console.error('Fetch Error:', error);
+    throw error; // Re-throw to be handled in the main route
   }
-  
-  return response.json();
 }
 
 // Main weather endpoint - compatible with existing frontend
@@ -199,6 +204,13 @@ app.get('/api/stats', (req, res) => {
     ? ((stats.cacheHits / stats.requests) * 100).toFixed(1)
     : 0;
   
+  let maxCapacity = 0;
+  if (parseFloat(cacheHitRate) < 100) {
+      maxCapacity = Math.floor(1000 * (100 / (100 - parseFloat(cacheHitRate))));
+  } else {
+      maxCapacity = Infinity; // Or some other appropriate value
+  }
+
   res.json({
     uptime: `${Math.floor(uptime / 60)} minutes`,
     stats: {
@@ -222,7 +234,7 @@ app.get('/api/stats', (req, res) => {
       grid5km: caches.grid5km.keys().length
     },
     estimatedUsers: Math.floor(stats.requests / 10),
-    maxCapacity: Math.floor(1000 * (100 / (100 - parseFloat(cacheHitRate))))
+    maxCapacity: maxCapacity
   });
 });
 
