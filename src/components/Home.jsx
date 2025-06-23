@@ -104,7 +104,7 @@ function Home() {
         setCurrentLocation(newLocation);
       } else {
         setLocationError(
-          `Could not find location: "${cityName}". Please try another search.`
+          `Could not find location: \"${cityName}\". Please try another search.`
         );
         setLoading(false);
       }
@@ -119,23 +119,24 @@ function Home() {
     setGpsLoading(true);
     setLocationError(null);
     setWeatherError(null);
+    let gpsLocation = null;
 
     try {
       // Try primary GPS method first
-      const gpsLocation = await requestGPSLocation();
+      gpsLocation = await requestGPSLocation();
       setCurrentLocation(gpsLocation);
       setUsingGPS(true);
       console.log("GPS location set:", gpsLocation);
-    } catch (error) {
-      console.error("Primary GPS failed:", error);
+    } catch (primaryError) {
+      console.error("Primary GPS failed:", primaryError);
 
       // Try fallback method with relaxed settings
       try {
         console.log("Trying fallback GPS method...");
-        const fallbackLocation = await requestGPSLocationFallback();
-        setCurrentLocation(fallbackLocation);
+        gpsLocation = await requestGPSLocationFallback();
+        setCurrentLocation(gpsLocation);
         setUsingGPS(true);
-        console.log("Fallback GPS location set:", fallbackLocation);
+        console.log("Fallback GPS location set:", gpsLocation);
       } catch (fallbackError) {
         console.error("Fallback GPS also failed:", fallbackError);
 
@@ -146,6 +147,9 @@ function Home() {
       }
     } finally {
       setGpsLoading(false);
+    }
+    if (!gpsLocation) {
+      setUsingGPS(false);
     }
   };
 
@@ -179,13 +183,7 @@ function Home() {
   const handleGPSDebug = async () => {
     try {
       const gpsStatus = await checkGPSAvailability();
-      const debugInfo = `GPS Debug Info:
-• Available: ${gpsStatus.available}
-• Permission: ${gpsStatus.permission || "unknown"}
-• Reason: ${gpsStatus.reason || "none"}
-• Protocol: ${window.location.protocol}
-• Hostname: ${window.location.hostname}
-• Browser: ${navigator.userAgent.split(" ")[0]}`;
+      const debugInfo = `GPS Debug Info:\n• Available: ${gpsStatus.available}\n• Permission: ${gpsStatus.permission || "unknown"}\n• Reason: ${gpsStatus.reason || "none"}\n• Protocol: ${window.location.protocol}\n• Hostname: ${window.location.hostname}\n• Browser: ${navigator.userAgent.split(" ")[0]}`;
 
       console.log(debugInfo);
       alert(debugInfo);
@@ -235,9 +233,10 @@ function Home() {
               temperature: current.temperature || current.temperatureAvg,
               feelsLike:
                 current.temperatureApparent || current.temperatureApparentAvg,
-              condition: getWeatherCondition(
-                current.weatherCode || current.weatherCodeMax
-              ),
+              condition:
+                getWeatherCondition(
+                  current.weatherCode || current.weatherCodeMax
+                ),
               windSpeed: current.windSpeed || current.windSpeedAvg,
               humidity: current.humidity || current.humidityAvg,
               pressure: Math.round(
@@ -255,7 +254,7 @@ function Home() {
         }
       }
     }
-  }, []); // Run only once on mount
+  }, [setCurrentLocation, location]); // Run only once on mount
 
   useEffect(() => {
     let isMounted = true;
@@ -293,9 +292,10 @@ function Home() {
                 temperature: current.temperature || current.temperatureAvg,
                 feelsLike:
                   current.temperatureApparent || current.temperatureApparentAvg,
-                condition: getWeatherCondition(
-                  current.weatherCode || current.weatherCodeMax
-                ),
+                condition:
+                  getWeatherCondition(
+                    current.weatherCode || current.weatherCodeMax
+                  ),
                 windSpeed: current.windSpeed || current.windSpeedAvg,
                 humidity: current.humidity || current.humidityAvg,
                 pressure: Math.round(
@@ -536,21 +536,25 @@ function Home() {
 
             <CurrentWeatherCard
               weather={currentWeather}
-              darkMode={darkMode === "dark"}
+              darkMode={darkMode === "dark"
+              }
             />
             <RainCountdown
               weatherData={hourlyData}
               language={language}
-              darkMode={darkMode === "dark"}
+              darkMode={darkMode === "dark"
+              }
             />
             <HourlyTimeline
               hourlyData={hourlyData}
               language={language}
-              darkMode={darkMode === "dark"}
+              darkMode={darkMode === "dark"
+              }
             />
             <WeeklyForecast
               dailyData={dailyData}
-              darkMode={darkMode === "dark"}
+              darkMode={darkMode === "dark"
+              }
             />
           </div>
         )}
@@ -570,7 +574,8 @@ function Home() {
       {showNotificationSettings && (
         <NotificationSettings
           language={language}
-          darkMode={darkMode === "dark"}
+          darkMode={darkMode === "dark"
+          }
           onClose={() => {
             setShowNotificationSettings(false);
             // Refresh notification status after settings change

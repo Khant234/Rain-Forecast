@@ -22,7 +22,17 @@ function getUserLocation() {
       reject('Geolocation not supported');
     } else {
       navigator.geolocation.getCurrentPosition(
-        pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          // Basic validation to check for reasonable values
+          if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+            reject('Invalid location coordinates');
+            return;
+          }
+          resolve({ lat: lat, lon: lon });
+        },
         err => reject('Location permission denied')
       );
     }
@@ -32,6 +42,11 @@ function getUserLocation() {
 // 3. Poll backend for rain forecast
 async function checkRainForecast(lat, lon) {
   try {
+    // Validate lat and lon again before sending to the backend
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      throw new Error('Invalid latitude or longitude');
+    }
+
     const res = await fetch(`/api/weather/${lat}/${lon}`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();

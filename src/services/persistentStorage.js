@@ -132,9 +132,10 @@ class StorageManager {
 
   getStorageUsage() {
     let total = 0;
-    for (let key in this.storageType) {
-      if (this.storageType.hasOwnProperty(key)) {
-        total += this.storageType[key].length;
+    for (let i = 0; i < this.storageType.length; i++) {
+      const key = this.storageType.key(i);
+      if (key && this.storageType.hasOwnProperty(key)) {
+        total += this.storageType.getItem(key).length;  // Use getItem to retrieve the actual string
       }
     }
     return total;
@@ -170,7 +171,8 @@ class StorageManager {
       if (currentUsage - removedSize <= targetUsage) break;
       
       // Don't remove critical data
-      if (!key.includes('weather_data') && !key.includes('location_data')) {
+      const nonRemovableKeys = [STORAGE_KEYS.USER_PREFERENCES, STORAGE_KEYS.NOTIFICATION_SETTINGS]; // Explicitly define non-removable keys
+      if (!nonRemovableKeys.includes(key)) {
         this.removeItem(key);
         removedSize += data.size;
       }

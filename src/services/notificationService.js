@@ -14,6 +14,12 @@ const DEFAULT_SETTINGS = {
 // Notification cooldown to prevent spam (30 minutes)
 const NOTIFICATION_COOLDOWN = 30 * 60 * 1000;
 
+// Function to sanitize text to prevent XSS
+function sanitizeText(text) {
+  const cleanText = String(text).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return cleanText;
+}
+
 export class RainNotificationService {
   constructor() {
     this.settings = this.loadSettings();
@@ -38,6 +44,12 @@ export class RainNotificationService {
   // Save notification settings to localStorage
   saveSettings(newSettings) {
     try {
+      // Validate settings before saving
+      if (!this.validateSettings(newSettings)) {
+        console.error("Invalid notification settings provided.");
+        return;
+      }
+
       this.settings = { ...this.settings, ...newSettings };
       localStorage.setItem(
         NOTIFICATION_SETTINGS_KEY,
@@ -47,6 +59,16 @@ export class RainNotificationService {
     } catch (error) {
       console.error("Error saving notification settings:", error);
     }
+  }
+
+  // Validate notification settings
+  validateSettings(settings) {
+    // Add validation rules here as needed
+    if (typeof settings !== 'object' || settings === null) {
+      return false;
+    }
+
+    return true;
   }
 
   // Load notification history
@@ -129,52 +151,67 @@ export class RainNotificationService {
 
   // Check if we should send notification (cooldown logic)
   shouldSendNotification(rainEvent) {
-    const now = Date.now();
-    const eventKey = `${Math.round(rainEvent.lat)}_${Math.round(
-      rainEvent.lon
-    )}_${rainEvent.startTime}`;
+    try {
+      const now = Date.now();
+      const eventKey = `${Math.round(rainEvent.lat)}_${Math.round(
+        rainEvent.lon
+      )}_${rainEvent.startTime}`;
 
-    // Check if we've already sent a notification for this event recently
-    const recentNotification = this.notificationHistory.find(
-      (notification) =>
-        notification.eventKey === eventKey &&
-        now - notification.timestamp < NOTIFICATION_COOLDOWN
-    );
+      // Check if we've already sent a notification for this event recently
+      const recentNotification = this.notificationHistory.find(
+        (notification) =>
+          notification.eventKey === eventKey &&
+          now - notification.timestamp < NOTIFICATION_COOLDOWN
+      );
 
-    return !recentNotification;
+      return !recentNotification;
+    } catch (error) {
+      console.error("Error checking notification status:", error);
+      return false;
+    }
   }
 
   // Get weather emoji based on precipitation data
   getWeatherEmoji(precipitationType, precipitationProbability) {
-    // Only show rain icons for significant precipitation probability
-    if (precipitationType > 0 && precipitationProbability > 60) return "🌧️";
-    if (precipitationProbability > 70) return "🌦️";
-    return "☀️";
+    try {
+      // Only show rain icons for significant precipitation probability
+      if (precipitationType > 0 && precipitationProbability > 60) return "🌧️";
+      if (precipitationProbability > 70) return "🌦️";
+      return "☀️";
+    } catch (error) {
+      console.error("Error getting weather emoji:", error);
+      return "☀️"; // Default emoji in case of error
+    }
   }
 
   // Format time until rain
   formatTimeUntilRain(minutes, language = "en") {
-    if (minutes < 1) {
-      return language === "mm" ? "ယခုပင်" : "now";
-    }
+    try {
+      if (minutes < 1) {
+        return language === "mm" ? "ယခုပင်" : "now";
+      }
 
-    if (minutes < 60) {
-      return language === "mm"
-        ? `${Math.round(minutes)} မိနစ်အတွင်း`
-        : `in ${Math.round(minutes)} minutes`;
-    }
+      if (minutes < 60) {
+        return language === "mm"
+          ? `${Math.round(minutes)} မိနစ်အတွင်း`
+          : `in ${Math.round(minutes)} minutes`;
+      }
 
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = Math.round(minutes % 60);
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = Math.round(minutes % 60);
 
-    if (language === "mm") {
-      return remainingMinutes > 0
-        ? `${hours} နာရီ ${remainingMinutes} မိနစ်အတွင်း`
-        : `${hours} နာရီအတွင်း`;
-    } else {
-      return remainingMinutes > 0
-        ? `in ${hours}h ${remainingMinutes}m`
-        : `in ${hours} hour${hours > 1 ? "s" : ""}`;
+      if (language === "mm") {
+        return remainingMinutes > 0
+          ? `${hours} နာရီ ${remainingMinutes} မိနစ်အတွင်း`
+          : `${hours} နာရီအတွင်း`;
+      } else {
+        return remainingMinutes > 0
+          ? `in ${hours}h ${remainingMinutes}m`
+          : `in ${hours} hour${hours > 1 ? "s" : ""}`;
+      }
+    } catch (error) {
+      console.error("Error formatting time until rain:", error);
+      return ""; // Return an empty string or default value
     }
   }
 
@@ -184,64 +221,78 @@ export class RainNotificationService {
     minutesUntilRain,
     language = "en"
   ) {
-    if (language === "mm") {
-      if (minutesUntilRain <= 5) {
-        return precipitationProbability > 80
-          ? "ချက်ချင်း အမိုးအကာရှာပါ"
-          : "ထီးကို အသင့်ပြင်ထားပါ";
-      } else if (minutesUntilRain <= 15) {
-        return precipitationProbability > 80
-          ? "ထီးယူသွားပါ"
-          : "ထီးကို စဉ်းစားပါ";
+    try {
+      if (language === "mm") {
+        if (minutesUntilRain <= 5) {
+          return precipitationProbability > 80
+            ? "ချက်ချင်း အမိုးအကာရှာပါ"
+            : "ထီးကို အသင့်ပြင်ထားပါ";
+        } else if (minutesUntilRain <= 15) {
+          return precipitationProbability > 80
+            ? "ထီးယူသွားပါ"
+            : "ထီးကို စဉ်းစားပါ";
+        } else {
+          return "မိုးရွာနိုင်သည်ကို သတိပြုပါ";
+        }
       } else {
-        return "မိုးရွာနိုင်သည်ကို သတိပြုပါ";
+        if (minutesUntilRain <= 5) {
+          return precipitationProbability > 80
+            ? "Seek shelter immediately"
+            : "Get your umbrella ready";
+        } else if (minutesUntilRain <= 15) {
+          return precipitationProbability > 80
+            ? "Bring an umbrella"
+            : "Consider bringing an umbrella";
+        } else {
+          return "Plan accordingly for possible rain";
+        }
       }
-    } else {
-      if (minutesUntilRain <= 5) {
-        return precipitationProbability > 80
-          ? "Seek shelter immediately"
-          : "Get your umbrella ready";
-      } else if (minutesUntilRain <= 15) {
-        return precipitationProbability > 80
-          ? "Bring an umbrella"
-          : "Consider bringing an umbrella";
-      } else {
-        return "Plan accordingly for possible rain";
-      }
+    } catch (error) {
+      console.error("Error getting actionable advice:", error);
+      return ""; // Default advice in case of error
     }
   }
 
   // Create notification content
   createNotificationContent(rainEvent, language = "en") {
-    const { precipitationProbability, minutesUntilRain, precipitationType } =
-      rainEvent;
-    const emoji = this.getWeatherEmoji(
-      precipitationType,
-      precipitationProbability
-    );
-    const timeText = this.formatTimeUntilRain(minutesUntilRain, language);
-    const advice = this.getActionableAdvice(
-      precipitationProbability,
-      minutesUntilRain,
-      language
-    );
+    try {
+      const { precipitationProbability, minutesUntilRain, precipitationType } = rainEvent;
+      const emoji = this.getWeatherEmoji(
+        precipitationType,
+        precipitationProbability
+      );
+      const timeText = this.formatTimeUntilRain(minutesUntilRain, language);
+      const advice = this.getActionableAdvice(
+        precipitationProbability,
+        minutesUntilRain,
+        language
+      );
 
-    if (language === "mm") {
-      return {
-        title: `${emoji} မိုးရွာမည်ဖြစ်သည်`,
-        body: `မိုးရွာနိုင်ခြေ: ${precipitationProbability}%\n${timeText}\n${advice}`,
-        icon: "/icons/icon-144x144.png",
-        tag: "rain-alert",
-        requireInteraction: true,
-      };
-    } else {
-      return {
-        title: `${emoji} Rain Alert`,
-        body: `${precipitationProbability}% chance of rain ${timeText}\n${advice}`,
-        icon: "/icons/icon-144x144.png",
-        tag: "rain-alert",
-        requireInteraction: true,
-      };
+      // Sanitize potentially unsafe strings
+      const safePrecipitationProbability = sanitizeText(precipitationProbability);
+      const safeTimeText = sanitizeText(timeText);
+      const safeAdvice = sanitizeText(advice);
+
+      if (language === "mm") {
+        return {
+          title: `${emoji} မိုးရွာမည်ဖြစ်သည်`,
+          body: `မိုးရွာနိုင်ခြေ: ${safePrecipitationProbability} %\n${safeTimeText}\n${safeAdvice}`,
+          icon: "/icons/icon-144x144.png",
+          tag: "rain-alert",
+          requireInteraction: true,
+        };
+      } else {
+        return {
+          title: `${emoji} Rain Alert`,
+          body: `${safePrecipitationProbability} % chance of rain ${safeTimeText}\n${safeAdvice}`,
+          icon: "/icons/icon-144x144.png",
+          tag: "rain-alert",
+          requireInteraction: true,
+        };
+      }
+    } catch (error) {
+      console.error("Error creating notification content:", error);
+      return null; // Or a default notification object
     }
   }
 
@@ -267,6 +318,12 @@ export class RainNotificationService {
         rainEvent,
         this.settings.language
       );
+
+      if (!content) {
+        console.warn("Notification content is null, not sending notification");
+        return false;
+      }
+
       const notification = new Notification(content.title, content);
 
       // Save to history
@@ -303,6 +360,12 @@ export class RainNotificationService {
     };
 
     const content = this.createNotificationContent(testEvent, language);
+
+    if (!content) {
+      console.warn("Test notification content is null, not sending notification");
+      return false;
+    }
+
     content.title =
       language === "mm"
         ? "🧪 စမ်းသပ်မှု - " + content.title

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Lottie from "lottie-react";
 
 const WeatherAnimation = ({ condition }) => {
@@ -30,10 +30,15 @@ const WeatherAnimation = ({ condition }) => {
         }
 
         // Import animation dynamically
-        const animation = await import(
-          `../../assets/animations/${animationName}.json`
-        );
-        setAnimationData(animation.default);
+        try {
+          const animation = await import(
+            `../../assets/animations/${animationName}.json`
+          );
+          setAnimationData(animation.default);
+        } catch (importError) {
+          console.error("Error importing animation:", importError);
+          setAnimationData(null);
+        }
       } catch (error) {
         console.error("Error loading weather animation:", error);
         // Fallback to emoji if animation fails to load
@@ -44,11 +49,28 @@ const WeatherAnimation = ({ condition }) => {
     loadAnimation();
   }, [condition]);
 
+  const memoizedGetWeatherEmoji = useCallback((code) => {
+    switch (code) {
+      case 1000: // Clear
+        return "☀️";
+      case 1100: // Mostly Clear
+      case 1101: // Partly Cloudy
+        return "⛅";
+      case 4000: // Light Rain
+        return "🌦️";
+      case 4001: // Rain
+      case 4200: // Heavy Rain
+        return "🌧️";
+      default:
+        return "🌤️";
+    }
+  }, []);
+
   if (!animationData) {
     // Fallback to emoji if no animation is loaded
     return (
       <div className="text-3xl sm:text-4xl w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-        {getWeatherEmoji(condition)}
+        {memoizedGetWeatherEmoji(condition)}
       </div>
     );
   }

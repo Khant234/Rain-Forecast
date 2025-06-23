@@ -107,6 +107,45 @@ async function checkAllCaches(lat, lon) {
   return null;
 }
 
+// Mock implementation of fetchWeatherData for testing purposes.
+async function fetchWeatherData(lat, lon, apiKey) {
+  // Simulate an API call delay
+  await new Promise(resolve => setTimeout(resolve, 200));
+
+  // Simulate weather data
+  const temperature = 20 + Math.random() * 15; // Temperature between 20 and 35
+  const humidity = 50 + Math.random() * 30;    // Humidity between 50 and 80
+  const windSpeed = Math.random() * 10;       // Wind speed between 0 and 10
+
+  return {
+    latitude: lat,
+    longitude: lon,
+    temperature: temperature.toFixed(1),
+    humidity: humidity.toFixed(1),
+    windSpeed: windSpeed.toFixed(1),
+    apiKeyUsed: apiKey,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// Mock implementation of findNearestCache for testing purposes.
+function findNearestCache(lat, lon) {
+  // This is a placeholder, in reality, this would search the cache for
+  // the nearest location with cached data.
+  console.warn("findNearestCache is being called, but the implementation is a placeholder.");
+  
+  // For demonstration purposes, return some static data
+  return {
+    latitude: lat,
+    longitude: lon,
+    temperature: "25",
+    humidity: "60",
+    windSpeed: "5",
+    approximate: true // Indicate that this is not the exact location
+  };
+}
+
+
 // Weather endpoint
 app.get('/api/weather/:lat/:lon', async (req, res) => {
   const { lat, lon } = req.params;
@@ -149,7 +188,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
       });
     }
     
-    return res.status(429).json({ 
+    return res.status(429).json({
       error: 'API limit reached',
       nextReset: Math.min(...apiKeys.map(k => k.lastReset.hourly + 3600000 - Date.now()))
     });

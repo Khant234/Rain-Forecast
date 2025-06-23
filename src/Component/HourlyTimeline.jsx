@@ -5,7 +5,7 @@ import {
   getRainChanceColorClass,
   normalizePrecipitationProbability,
 } from "../utils/rainChanceFormatter";
-const HourlyTimeline = ({ data, language, darkMode }) => {
+const HourlyTimeline = ({ data, language, darkMode, timezone }) => {
   const scrollRef = React.useRef(null);
 
   const scroll = (direction) => {
@@ -22,8 +22,7 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
   const intervals = data.hourlyData.data.timelines[0].intervals;
 
   const getWeatherEmoji = (interval) => {
-    const { precipitationType, precipitationProbability, weatherCode } =
-      interval.values;
+    const { precipitationType, precipitationProbability, weatherCode } = interval.values;
 
     // Use weather code as primary indicator
     if (weatherCode) {
@@ -80,7 +79,7 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
     return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       hour12: true,
-      timeZone: "Asia/Yangon",
+      timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone, // Use prop or detect
     });
   };
 

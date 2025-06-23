@@ -1,5 +1,6 @@
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO } from "date-fns";
+import { enUS, mm } from 'date-fns/locale'
 import WeatherAnimation from "../../common/WeatherAnimation";
 import {
   formatRainChance,
@@ -10,9 +11,15 @@ import {
 const RainCountdown = ({ nextRain, language }) => {
   const formatTimeDistance = (date) => {
     try {
-      return formatDistanceToNow(new Date(date), {
-        addSuffix: true,
-      });
+      const parsedDate = parseISO(date);
+      const locale = language === 'mm' ? mm : enUS
+      return formatDistanceToNow(
+          parsedDate,
+        {
+          addSuffix: true,
+          locale: locale,
+        }
+      );
     } catch (error) {
       console.error("Error formatting time distance:", error);
       return language === "mm" ? "အချိန်အတိအကျ မသိရှိရပါ" : "Time unknown";
@@ -21,17 +28,8 @@ const RainCountdown = ({ nextRain, language }) => {
 
   const formatMessage = (timeDistance) => {
     if (language === "mm") {
-      // Manual translation for Burmese
-      const translatedTime = timeDistance
-        .replace("about", "ခန့်")
-        .replace("in", "")
-        .replace("minute", "မိနစ်")
-        .replace("hour", "နာရီ")
-        .replace("day", "ရက်")
-        .replace("month", "လ")
-        .replace("year", "နှစ်")
-        .replace("s", "");
-      return `မိုးရွာရန် ${translatedTime} ခန့်ကျန်ပါသည်`;
+      // Manual translation for Burmese - Consider using proper i18n
+      return `မိုးရွာရန် ${timeDistance} ခန့်ကျန်ပါသည်`;
     }
     return `Rain expected ${timeDistance}`;
   };

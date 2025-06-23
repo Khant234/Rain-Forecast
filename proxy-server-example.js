@@ -2,6 +2,7 @@
 const express = require('express');
 const NodeCache = require('node-cache');
 const app = express();
+const fetch = require('node-fetch');
 
 // Multi-level cache system
 const caches = {
@@ -14,11 +15,47 @@ const caches = {
 let apiCallsToday = 0;
 let apiCallsSaved = 0;
 
+// Function to fetch weather data from Tomorrow.io (replace with your actual API key)
+async function fetchFromTomorrowIO(lat, lon) {
+  const apiKey = 'YOUR_TOMORROWIO_API_KEY'; // Replace with your actual API key
+  const apiUrl = `https://api.tomorrow.io/v4/weather/realtime?location=${lat},${lon}&apikey=${apiKey}`;
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching data from Tomorrow.io:', error);
+    throw error;
+  }
+}
+
+// Mock function for reverse geocoding (replace with a real geocoding service)
+async function getCityName(lat, lon) {
+  // Replace this with a call to a geocoding service like OpenCage, Nominatim, etc.
+  // This is just a placeholder.
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Simulate a city name based on coordinates (for demonstration purposes)
+      if (lat > 40 && lat < 50 && lon > -80 && lon < -70) {
+        resolve('New York');
+      } else if (lat > 30 && lat < 40 && lon > -90 && lon < -80) {
+        resolve('Atlanta');
+      } else {
+        resolve('Unknown City');
+      }
+    }, 500);
+  });
+}
+
 // Smart weather endpoint
 app.get('/api/weather/:lat/:lon', async (req, res) => {
   const { lat, lon } = req.params;
   const numLat = parseFloat(lat);
   const numLon = parseFloat(lon);
+
+  if (isNaN(numLat) || isNaN(numLon)) {
+    return res.status(400).json({ error: 'Invalid latitude or longitude' });
+  }
   
   // Try exact coordinates first
   const exactKey = `${lat}_${lon}`;
@@ -42,19 +79,28 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
   }
   
   // Try city cache (using reverse geocoding)
-  const city = await getCityName(numLat, numLon);
-  const cityKey = city.toLowerCase().replace(/\s+/g, '_');
-  cachedData = caches.city.get(cityKey);
-  if (cachedData) {
-    apiCallsSaved++;
-    console.log(`✅ City cache hit! Saved calls: ${apiCallsSaved}`);
-    caches.grid.set(gridKey, cachedData); // Promote to grid cache
-    caches.exact.set(exactKey, cachedData); // Promote to exact cache
-    return res.json({ ...cachedData, cacheType: 'city' });
+  try {
+    const city = await getCityName(numLat, numLon);
+    const cityKey = city.toLowerCase().replace(/\s+/g, '_');
+    cachedData = caches.city.get(cityKey);
+    if (cachedData) {
+      apiCallsSaved++;
+      console.log(`✅ City cache hit! Saved calls: ${apiCallsSaved}`);
+      caches.grid.set(gridKey, cachedData); // Promote to grid cache
+      caches.exact.set(exactKey, cachedData); // Promote to exact cache
+      return res.json({ ...cachedData, cacheType: 'city' });
+    }
+  } catch (error) {
+    console.error("Error getting city name:", error);
   }
   
   // No cache hit - make API call
-  console.log(`🔄 Making API call #${++apiCallsToday} for ${city || gridKey}`);
+  try {
+    const city = await getCityName(numLat, numLon);
+    console.log(`🔄 Making API call #${++apiCallsToday} for ${city}`);
+  } catch(error) {
+    console.log(`🔄 Making API call #${++apiCallsToday} for ${gridKey}`);
+  }
   
   try {
     const weatherData = await fetchFromTomorrowIO(numLat, numLon);
@@ -62,7 +108,13 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
     // Cache at all levels
     caches.exact.set(exactKey, weatherData);
     caches.grid.set(gridKey, weatherData);
-    if (city) caches.city.set(cityKey, weatherData);
+    try {
+      const city = await getCityName(numLat, numLon);
+      const cityKey = city.toLowerCase().replace(/\s+/g, '_');
+      if (city) caches.city.set(cityKey, weatherData);
+    } catch (error) {
+      console.error("Error getting city name for caching:", error);
+    }
     
     res.json({ ...weatherData, cacheType: 'none', apiCall: true });
   } catch (error) {
@@ -88,8 +140,8 @@ app.get('/api/stats', (req, res) => {
       grid: caches.grid.keys().length,
       city: caches.city.keys().length
     },
-    estimatedDailyCalls: Math.round(apiCallsToday * (24 / new Date().getHours())),
-    servableUsers: Math.round(500 / (apiCallsToday / Math.max(apiCallsSaved, 1)))
+    estimatedDailyCalls: Math.round(apiCallsToday * (24 / Math.max(new Date().getHours(), 1))),
+    servableUsers: Math.round(500 / ((apiCallsToday + 1) / Math.max(apiCallsSaved + 1, 1)))
   };
   
   res.json(stats);
@@ -97,21 +149,41 @@ app.get('/api/stats', (req, res) => {
 
 // Find nearest cached data (within 10km)
 function findNearestCachedData(lat, lon) {
-  const allKeys = caches.grid.keys();
-  let nearest = null;
-  let minDistance = 10; // 10km max
-  
-  for (const key of allKeys) {
-    const [cachedLat, cachedLon] = key.split('_').map(parseFloat);
-    const distance = calculateDistance(lat, lon, cachedLat, cachedLon);
-    
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearest = caches.grid.get(key);
+    let nearest = null;
+    let minDistance = 10; // 10km max
+
+    // Get all keys from all caches.
+    const allKeys = [...caches.grid.keys(), ...caches.city.keys(), ...caches.exact.keys()];
+
+    for (const key of allKeys) {
+        let cachedLat, cachedLon;
+
+        // Determine which cache the key belongs to and parse coordinates accordingly
+        if (caches.grid.has(key)) {
+            [cachedLat, cachedLon] = key.split('_').map(parseFloat);
+        } else if (caches.city.has(key) || caches.exact.has(key)) {
+            // For city and exact, assume the key is the city/exact key
+            continue; // Skip city/exact cache entries; distance calculation not applicable
+        } else {
+            continue;
+        }
+
+        const distance = calculateDistance(lat, lon, cachedLat, cachedLon);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            // Retrieve data from the appropriate cache
+            if (caches.grid.has(key)) {
+                nearest = caches.grid.get(key);
+            } else if (caches.city.has(key)) {
+                nearest = caches.city.get(key);
+            } else if (caches.exact.has(key)) {
+                nearest = caches.exact.get(key);
+            }
+        }
     }
-  }
-  
-  return nearest;
+
+    return nearest;
 }
 
 // Calculate distance between coordinates (km)

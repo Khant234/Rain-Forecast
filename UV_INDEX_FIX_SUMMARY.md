@@ -149,6 +149,8 @@ uvIndex: isNight ? 0 : Math.floor(Math.random() * 11)
 - **Myanmar Example**: 96.1951° ÷ 15 = 6.4 ≈ 6 hours (close to actual UTC+6:30)
 - **Accuracy**: ±1 hour for most locations (sufficient for day/night determination)
 
+**Important Disclaimer:** This longitude-based timezone approximation is a simplified method.  It provides a reasonable estimate for day/night determination, but may not be accurate for all locations due to political boundaries and other factors that influence timezone definitions. For precise timezone calculations, it's recommended to use a dedicated timezone lookup service.
+
 #### Sunrise/Sunset Integration:
 - Uses actual sunrise/sunset times when available from API
 - Falls back to simple time calculation when not available

@@ -56,7 +56,6 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 const weatherCache = new Map();
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // Weather API configuration

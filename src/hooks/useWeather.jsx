@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getWeatherData } from '../services/weatherService';
 
-export const useWeather = () => {
+export const useWeather = (latitude, longitude) => {
   const [currentWeather, setCurrentWeather] = useState(null);
   const [nextRainEvent, setNextRainEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -11,8 +11,7 @@ export const useWeather = () => {
     const fetchWeather = async () => {
       try {
         setIsLoading(true);
-        // Yangon, Myanmar coordinates
-        const weatherData = await getWeatherData(21.9139, 95.9550);
+        const weatherData = await getWeatherData(latitude, longitude);
         
         if (weatherData?.hourlyData?.data?.timelines?.[0]?.intervals) {
           const intervals = weatherData.hourlyData.data.timelines[0].intervals;
@@ -20,9 +19,9 @@ export const useWeather = () => {
           
           if (current) {
             setCurrentWeather({
-              temperature: Math.round(current.temperature || 25),
-              description: getWeatherDescription(current.weatherCode || 1000),
-              condition: getWeatherCondition(current.weatherCode || 1000),
+              temperature: Math.round(current.temperature != null ? current.temperature : 25),
+              description: getWeatherDescription(current.weatherCode != null ? current.weatherCode : 1000),
+              condition: getWeatherCondition(current.weatherCode != null ? current.weatherCode : 1000),
             });
           }
 
@@ -50,7 +49,7 @@ export const useWeather = () => {
     };
 
     fetchWeather();
-  }, []);
+  }, [latitude, longitude]);
 
   return {
     currentWeather,

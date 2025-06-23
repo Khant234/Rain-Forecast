@@ -70,11 +70,8 @@ self.addEventListener("fetch", (event) => {
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME).then((cache) => {
-              // Cache the response with a 5-minute expiration
+              // Cache the response
               cache.put(event.request, responseToCache);
-              setTimeout(() => {
-                cache.delete(event.request);
-              }, 5 * 60 * 1000); // 5 minutes
             });
 
             return response;
