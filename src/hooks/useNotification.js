@@ -37,7 +37,6 @@ export const useNotification = () => {
           body,
           icon,
           badge: icon,
-          timestamp: Date.now(),
           vibrate: [200, 100, 200],
           ...options,
         });
@@ -45,9 +44,9 @@ export const useNotification = () => {
         // Auto close after 5 seconds
         setTimeout(() => notification.close(), 5000);
 
-        // Handle click
+        // Handle click - opens a new tab.
         notification.onclick = () => {
-          window.focus();
+          window.open("https://example.com", '_blank').focus(); // Replace with your desired URL or action
           notification.close();
         };
       } catch (error) {

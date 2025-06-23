@@ -44,7 +44,7 @@ This is a simple weather application built with React and Vite. It uses the Tomo
     VITE_OPENCAGE_API_KEY=your_opencage_api_key
     ```
 
-    Then, update the `src/services/weatherService.js` file to use these environment variables instead of the placeholder strings.
+    Ensure the `src/services/weatherService.js` file correctly imports and uses these environment variables.
 
 ### Running the Development Server
 

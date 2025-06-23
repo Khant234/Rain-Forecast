@@ -53,7 +53,16 @@ const APIUsageDisplay = ({ darkMode }) => {
       <div className="mb-1.5 sm:mb-2">
         <div className="flex justify-between text-xs sm:text-sm">
           <span>Hourly</span>
-          <span>{usage.hourly.used}/{usage.hourly.limit}</span>
+          <span className={getColorClass(usage.hourly.percentage)}>{usage.hourly.used}/{usage.hourly.limit}</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2 mt-1">
+          <div 
+            className={`h-1.5 sm:h-2 rounded-full ${
+              usage.hourly.percentage >= 90 ? 'bg-red-500' :
+              usage.hourly.percentage >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+            }`}
+            style={{ width: `${Math.min(usage.hourly.percentage, 100)}%` }}
+          />
         </div>
       </div>
       

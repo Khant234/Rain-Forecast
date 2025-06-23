@@ -86,6 +86,7 @@ export const useLocation = () => {
             const parsed = JSON.parse(saved);
             if (validateCoordinates(parsed)) {
               setCoordinates(parsed);
+              saveCoordinates(parsed); // Save the parsed coordinates back to localStorage
             } else {
               localStorage.removeItem("weatherAppCoordinates");
             }
@@ -95,7 +96,7 @@ export const useLocation = () => {
         }
       },
       { enableHighAccuracy: true }
-    );
+    ); 
   };
 
   const setManualLocation = (lat, lon) => {

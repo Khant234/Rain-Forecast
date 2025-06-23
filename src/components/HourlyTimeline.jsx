@@ -21,8 +21,7 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
   }
 
   const getWeatherEmoji = (interval) => {
-    const { precipitationType, precipitationProbability, weatherCode } =
-      interval.values;
+    const { precipitationType, precipitationProbability, weatherCode } = interval.values;
 
     // Use weather code as primary indicator
     if (weatherCode) {
@@ -67,7 +66,8 @@ const HourlyTimeline = ({ hourlyData = [], language, darkMode }) => {
     }
 
     // Fallback: Only show rain icons for significant precipitation probability
-    if (precipitationType > 0 && precipitationProbability > 60) return "🌧️";
+    // check if precipitationType has a meaningful value
+    if (precipitationType !== null && precipitationType !== undefined && precipitationProbability > 60) return "🌧️";
     if (precipitationProbability > 70) return "🌦️";
 
     // Default to sunny for low precipitation probability

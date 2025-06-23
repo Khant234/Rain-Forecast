@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getWeatherData } from '../services/weatherService';
 
-export const useWeather = () => {
+export const useWeather = (latitude, longitude) => {
   const [currentWeather, setCurrentWeather] = useState(null);
   const [nextRainEvent, setNextRainEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -11,13 +11,12 @@ export const useWeather = () => {
     const fetchWeather = async () => {
       try {
         setIsLoading(true);
-        // Yangon, Myanmar coordinates
-        const weatherData = await getWeatherData(21.9139, 95.9550);
-        
+        const weatherData = await getWeatherData(latitude, longitude);
+
         if (weatherData?.hourlyData?.data?.timelines?.[0]?.intervals) {
           const intervals = weatherData.hourlyData.data.timelines[0].intervals;
           const current = intervals[0]?.values;
-          
+
           if (current) {
             setCurrentWeather({
               temperature: Math.round(current.temperature || 25),
@@ -27,8 +26,8 @@ export const useWeather = () => {
           }
 
           // Find next rain event
-          const nextRain = intervals.find(interval => 
-            interval.values.precipitationProbability > 50 || 
+          const nextRain = intervals.find(interval =>
+            interval.values.precipitationProbability > 50 ||
             interval.values.precipitationIntensity > 0
           );
 
@@ -44,13 +43,13 @@ export const useWeather = () => {
         setIsLoading(false);
       } catch (err) {
         console.error('Weather fetch error:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to fetch weather data');
         setIsLoading(false);
       }
     };
 
     fetchWeather();
-  }, []);
+  }, [latitude, longitude]);
 
   return {
     currentWeather,

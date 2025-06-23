@@ -80,7 +80,8 @@ class StorageManager {
     }
   }
 
-  setItem(key, value) {
+  setItem(key, value, retryCount = 0) {  // Added retryCount
+    const MAX_RETRIES = 2; // Define max retry count
     if (!this.isAvailable) return false;
     try {
       const serialized = JSON.stringify(value);
@@ -104,8 +105,13 @@ class StorageManager {
     } catch (error) {
       console.error(`Error writing to storage (${key}):`, error);
       if (error.name === 'QuotaExceededError') {
-        this.cleanupStorage();
-        return this.setItem(key, value); // Retry once
+        if (retryCount < MAX_RETRIES) { // Check retry count
+          this.cleanupStorage();
+          return this.setItem(key, value, retryCount + 1); // Retry with incremented count
+        } else {
+          console.error(`Max retries exceeded for storing ${key}`);
+          return false;
+        }
       }
       return false;
     }
@@ -132,10 +138,20 @@ class StorageManager {
 
   getStorageUsage() {
     let total = 0;
-    for (let key in this.storageType) {
-      if (this.storageType.hasOwnProperty(key)) {
-        total += this.storageType[key].length;
+    try {
+      for (let i = 0; i < this.storageType.length; i++) {
+        const key = this.storageType.key(i);
+        if (this.storageType.hasOwnProperty(key)) {
+          try {
+            total += this.storageType.getItem(key).length;
+          } catch (e) {
+            console.warn(`Error getting length of item ${key}`, e);
+          }
+        }
       }
+    } catch (e) {
+      console.error('Error getting keys from storage', e);
+      return total; // Return current total to avoid complete failure
     }
     return total;
   }
@@ -169,11 +185,9 @@ class StorageManager {
     for (const [key, data] of entries) {
       if (currentUsage - removedSize <= targetUsage) break;
       
-      // Don't remove critical data
-      if (!key.includes('weather_data') && !key.includes('location_data')) {
-        this.removeItem(key);
-        removedSize += data.size;
-      }
+      // Consider all data types for removal, weigh by age.
+      this.removeItem(key);
+      removedSize += data.size;
     }
     
     console.log(`🧹 Cleaned up ${removedSize} bytes`);

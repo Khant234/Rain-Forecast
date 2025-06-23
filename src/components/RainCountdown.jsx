@@ -9,6 +9,8 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
     const calculateRainTiming = () => {
       // Use hourly data instead of minute data since we don't have minute data
       if (!weatherData || !Array.isArray(weatherData)) {
+        setTimeToRain(null);
+        setRainDuration(null);
         return;
       }
 
@@ -21,13 +23,14 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
 
       for (let i = 0; i < intervals.length; i++) {
         const interval = intervals[i];
+
+        if (!interval || !interval.startTime || !interval.values) continue; // Safe check
+
         const time = new Date(interval.startTime);
 
         if (time < now) continue;
 
-        const isRaining =
-          interval.values.precipitationType > 0 ||
-          interval.values.precipitationProbability > 70;
+        const isRaining = interval.values.precipitationType > 0 || interval.values.precipitationProbability > 70;
 
         if (isRaining && rainStartIndex === -1) {
           rainStartIndex = i;
@@ -91,8 +94,7 @@ const RainCountdown = ({ weatherData, language, darkMode }) => {
         </div>
         <div className="text-xs sm:text-sm">
           {language === "mm"
-            ? "လတ်တလော မိုးရွာဖွယ်မရှိပါ"
-            : "No rain expected soon"}
+            ? "လတ်တလော မိုးရွာဖွယ်မရှိပါ" : "No rain expected soon"}
         </div>
       </div>
     );

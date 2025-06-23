@@ -79,19 +79,19 @@ async function checkAllCaches(lat, lon) {
     },
     // Level 2: 1km grid (~0.01 degree)
     { 
-      key: `grid1_${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`,
+      key: `grid1km_${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`,
       cache: 'exact',
       type: '1km grid'
     },
     // Level 3: 5km grid (~0.05 degree)
     { 
-      key: `grid5_${Math.round(lat * 20) / 20}_${Math.round(lon * 20) / 20}`,
+      key: `grid5km_${Math.round(lat * 20) / 20}_${Math.round(lon * 20) / 20}`,
       cache: 'grid5km',
       type: '5km grid'
     },
     // Level 4: 10km grid (~0.1 degree)
     { 
-      key: `grid10_${Math.round(lat * 10) / 10}_${Math.round(lon * 10) / 10}`,
+      key: `grid10km_${Math.round(lat * 10) / 10}_${Math.round(lon * 10) / 10}`,
       cache: 'grid10km',
       type: '10km grid'
     }
@@ -138,7 +138,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
   if (apiKey.calls.hourly >= apiKey.limits.hourly || 
       apiKey.calls.daily >= apiKey.limits.daily) {
     // All keys exhausted - return nearest cached data
-    const nearest = findNearestCache(numLat, numLon);
+    const nearest = findNearestCache(numLat, numLon); // This needs to be implemented
     if (nearest) {
       stats.cacheHits++;
       return res.json({
@@ -149,9 +149,15 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
       });
     }
     
-    return res.status(429).json({ 
+    const nextReset = Math.min(
+        ...apiKeys.map(
+            k => Math.min(k.lastReset.hourly + 3600000, k.lastReset.daily + 86400000) - Date.now()
+        )
+    );
+
+    return res.status(429).json({
       error: 'API limit reached',
-      nextReset: Math.min(...apiKeys.map(k => k.lastReset.hourly + 3600000 - Date.now()))
+      nextReset: nextReset
     });
   }
   
@@ -161,7 +167,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
     apiKey.calls.hourly++;
     apiKey.calls.daily++;
     
-    const weatherData = await fetchWeatherData(numLat, numLon, apiKey.key);
+    const weatherData = await fetchWeatherData(numLat, numLon, apiKey.key); // This needs to be implemented
     
     // Cache at multiple levels
     cacheAtAllLevels(numLat, numLon, weatherData);
@@ -186,19 +192,19 @@ function cacheAtAllLevels(lat, lon, data) {
   
   // 1km grid
   caches.exact.set(
-    `grid1_${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`, 
+    `grid1km_${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`, 
     data
   );
   
   // 5km grid
   caches.grid5km.set(
-    `grid5_${Math.round(lat * 20) / 20}_${Math.round(lon * 20) / 20}`, 
+    `grid5km_${Math.round(lat * 20) / 20}_${Math.round(lon * 20) / 20}`, 
     data
   );
   
   // 10km grid
   caches.grid10km.set(
-    `grid10_${Math.round(lat * 10) / 10}_${Math.round(lon * 10) / 10}`, 
+    `grid10km_${Math.round(lat * 10) / 10}_${Math.round(lon * 10) / 10}`, 
     data
   );
 }
@@ -260,7 +266,7 @@ setInterval(() => {
         if (apiKey.calls.daily < apiKey.limits.daily * 0.8) {
           // Only pre-cache if we have 20% capacity remaining
           try {
-            const data = await fetchWeatherData(lat, lon, apiKey.key);
+            const data = await fetchWeatherData(lat, lon, apiKey.key); // This needs to be implemented
             cacheAtAllLevels(lat, lon, data);
             apiKey.calls.daily++;
             stats.apiCalls++;
@@ -269,11 +275,21 @@ setInterval(() => {
           }
         }
       }
-    }
-  });
+    });
 }, 3600000); // Every hour
 
 app.listen(3001, () => {
   console.log('🚀 Multi-key weather proxy running on port 3001');
   console.log('📊 Stats: http://localhost:3001/api/stats');
 });
+
+// Mock implementations - REPLACE with real functions
+async function fetchWeatherData(lat, lon, apiKey) {
+    // Replace with actual API call
+    return { temperature: 20, conditions: 'Sunny', lat, lon };
+}
+
+function findNearestCache(lat, lon) {
+    // Replace with actual nearest neighbor search
+    return null; // Or return some cached data
+}

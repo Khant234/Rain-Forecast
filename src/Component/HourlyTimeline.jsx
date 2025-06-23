@@ -22,8 +22,7 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
   const intervals = data.hourlyData.data.timelines[0].intervals;
 
   const getWeatherEmoji = (interval) => {
-    const { precipitationType, precipitationProbability, weatherCode } =
-      interval.values;
+    const { precipitationType, precipitationProbability, weatherCode } = interval.values;
 
     // Use weather code as primary indicator
     if (weatherCode) {
@@ -77,10 +76,9 @@ const HourlyTimeline = ({ data, language, darkMode }) => {
 
   const formatTime = (timeString) => {
     const date = new Date(timeString);
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString(language, {
       hour: "numeric",
       hour12: true,
-      timeZone: "Asia/Yangon",
     });
   };
 
