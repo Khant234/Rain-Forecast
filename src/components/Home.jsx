@@ -1,16 +1,5 @@
-import React, { useEffect, useState, useContext } from "react";
-import {
-  Sun,
-  Moon,
-  Wind,
-  Droplets,
-  ThermometerSun,
-  Clock,
-  RefreshCw,
-  MapPin,
-  Bell,
-  BellOff,
-} from "lucide-react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
+import { Sun, Moon, Wind, Droplets, ThermometerSun, Clock, RefreshCw, MapPin, Bell, BellOff } from "lucide-react";
 import { SettingsContext } from "../context/SettingsContext";
 import {
   getWeatherData,
@@ -24,7 +13,7 @@ import {
   useMockGPS,
   initializePersistentStorage,
   storeLocationWithPersistence,
-  getStoredLocationWithPersistence,
+  getStoredLocationWithPersistence
 } from "../services/weatherService";
 import useRainAlerts from "../hooks/useRainAlerts";
 import NotificationSettings from "./NotificationSettings";
@@ -36,8 +25,7 @@ import WeeklyForecast from "./WeeklyForecast";
 import RainCountdown from "./RainCountdown";
 
 function Home() {
-  const { settings, updateSettings, setCurrentLocation } =
-    useContext(SettingsContext);
+  const { settings, updateSettings, setCurrentLocation } = useContext(SettingsContext);
   const { theme: darkMode, language, currentLocation: location } = settings;
 
   const [loading, setLoading] = useState(true);
@@ -52,8 +40,7 @@ function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [usingGPS, setUsingGPS] = useState(false);
-  const [showNotificationSettings, setShowNotificationSettings] =
-    useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState("default");
 
   // Initialize rain alerts hook
@@ -86,7 +73,7 @@ function Home() {
       5001: "Flurries",
       5100: "Light Snow",
       5101: "Heavy Snow",
-      8000: "Thunderstorm",
+      8000: "Thunderstorm"
     };
     return conditions[weatherCode] || "Unknown";
   };
@@ -103,9 +90,7 @@ function Home() {
       if (newLocation) {
         setCurrentLocation(newLocation);
       } else {
-        setLocationError(
-          `Could not find location: "${cityName}". Please try another search.`
-        );
+        setLocationError(`Could not find location: \"${cityName}\". Please try another search.`);
         setLoading(false);
       }
     } catch (error) {
@@ -140,9 +125,7 @@ function Home() {
         console.error("Fallback GPS also failed:", fallbackError);
 
         // Show error with option to use mock GPS
-        setLocationError(
-          `GPS location failed: ${fallbackError.message}\n\nThis might be due to:\n• Location services disabled\n• Poor GPS signal\n• Browser security restrictions\n\nYou can:\n• Enable location services and try again\n• Use the search function to find your city\n• Use mock GPS for testing (Yangon location)`
-        );
+        setLocationError(`GPS location failed: ${fallbackError.message}\n\nThis might be due to:\n• Location services disabled\n• Poor GPS signal\n• Browser security restrictions\n\nYou can:\n• Enable location services and try again\n• Use the search function to find your city\n• Use mock GPS for testing (Yangon location)`);
       }
     } finally {
       setGpsLoading(false);
@@ -179,13 +162,7 @@ function Home() {
   const handleGPSDebug = async () => {
     try {
       const gpsStatus = await checkGPSAvailability();
-      const debugInfo = `GPS Debug Info:
-• Available: ${gpsStatus.available}
-• Permission: ${gpsStatus.permission || "unknown"}
-• Reason: ${gpsStatus.reason || "none"}
-• Protocol: ${window.location.protocol}
-• Hostname: ${window.location.hostname}
-• Browser: ${navigator.userAgent.split(" ")[0]}`;
+      const debugInfo = `GPS Debug Info:\n• Available: ${gpsStatus.available}\n• Permission: ${gpsStatus.permission || "unknown"}\n• Reason: ${gpsStatus.reason || "none"}\n• Protocol: ${window.location.protocol}\n• Hostname: ${window.location.hostname}\n• Browser: ${navigator.userAgent.split(" ")[0]}`;
 
       console.log(debugInfo);
       alert(debugInfo);
@@ -201,8 +178,7 @@ function Home() {
     initializePersistentStorage();
 
     // Check for stored location using new persistent storage first
-    const storedLocation =
-      getStoredLocationWithPersistence() || getStoredGPSLocation();
+    const storedLocation = getStoredLocationWithPersistence() || getStoredGPSLocation();
     if (storedLocation && !location) {
       console.log("Found stored location, using it...");
       setCurrentLocation(storedLocation);
@@ -213,39 +189,24 @@ function Home() {
       if (storedWeather) {
         console.log("Found stored GPS weather data, using it...");
         // Process stored weather data similar to fresh data
-        if (
-          storedWeather &&
-          storedWeather.timelines &&
-          Array.isArray(storedWeather.timelines)
-        ) {
+        if (storedWeather && storedWeather.timelines && Array.isArray(storedWeather.timelines)) {
           const { timelines } = storedWeather;
 
           const dailyTimeline = timelines.find((t) => t.timestep === "1d");
           const hourlyTimeline = timelines.find((t) => t.timestep === "1h");
 
-          if (
-            dailyTimeline &&
-            dailyTimeline.intervals &&
-            dailyTimeline.intervals.length > 0
-          ) {
+          if (dailyTimeline && dailyTimeline.intervals && dailyTimeline.intervals.length > 0) {
             const current = dailyTimeline.intervals[0].values;
 
             setCurrentWeather({
               location: storedLocation.name,
               temperature: current.temperature || current.temperatureAvg,
-              feelsLike:
-                current.temperatureApparent || current.temperatureApparentAvg,
-              condition: getWeatherCondition(
-                current.weatherCode || current.weatherCodeMax
-              ),
+              feelsLike: current.temperatureApparent || current.temperatureApparentAvg,
+              condition: getWeatherCondition(current.weatherCode || current.weatherCodeMax),
               windSpeed: current.windSpeed || current.windSpeedAvg,
               humidity: current.humidity || current.humidityAvg,
-              pressure: Math.round(
-                current.pressureSurfaceLevel ||
-                  current.pressureSurfaceLevelAvg ||
-                  1013
-              ),
-              uvIndex: Math.round(current.uvIndex || current.uvIndexMax || 0),
+              pressure: Math.round(current.pressureSurfaceLevel || current.pressureSurfaceLevelAvg || 1013),
+              uvIndex: Math.round(current.uvIndex || current.uvIndexMax || 0)
             });
           }
 
@@ -257,87 +218,66 @@ function Home() {
     }
   }, []); // Run only once on mount
 
+  const fetchWeather = useCallback(async (loc) => {
+    if (!loc) return;
+
+    setApiLoading(true);
+    setLoading(true);
+    setLocationError(null);
+    setWeatherError(null);
+
+    try {
+      const data = await getWeatherData(loc.lat, loc.lon);
+
+      if (data && data.timelines && Array.isArray(data.timelines)) {
+        const { timelines } = data;
+
+        // Find daily and hourly timelines
+        const dailyTimeline = timelines.find((t) => t.timestep === "1d");
+        const hourlyTimeline = timelines.find((t) => t.timestep === "1h");
+
+        if (dailyTimeline && dailyTimeline.intervals && dailyTimeline.intervals.length > 0) {
+          const current = dailyTimeline.intervals[0].values;
+
+          setCurrentWeather({
+            location: loc.name,
+            temperature: current.temperature || current.temperatureAvg,
+            feelsLike: current.temperatureApparent || current.temperatureApparentAvg,
+            condition: getWeatherCondition(current.weatherCode || current.weatherCodeMax),
+            windSpeed: current.windSpeed || current.windSpeedAvg,
+            humidity: current.humidity || current.humidityAvg,
+            pressure: current.pressureSurfaceLevel !== undefined ? Math.round(current.pressureSurfaceLevel) : current.pressureSurfaceLevelAvg !== undefined ? Math.round(current.pressureSurfaceLevelAvg) : 1013,
+            uvIndex: Math.round(current.uvIndex || current.uvIndexMax || 0)
+          });
+        }
+
+        setHourlyData(hourlyTimeline ? hourlyTimeline.intervals : []);
+        setDailyData(dailyTimeline ? dailyTimeline.intervals : []);
+      } else {
+        setWeatherError("Could not fetch weather data. Please try again.");
+        setCurrentWeather(null);
+        setHourlyData([]);
+        setDailyData([]);
+      }
+
+      setApiLoading(false);
+      setLoading(false);
+    } catch (error) {
+      console.error("Weather fetch error:", error);
+      setWeatherError(`Weather service error: ${error.message}`);
+      setCurrentWeather(null);
+      setHourlyData([]);
+      setDailyData([]);
+      setApiLoading(false);
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    let isMounted = true;
+    if (!location) return;
 
-    const fetchWeather = async () => {
-      if (!location) return;
-
-      if (isMounted) {
-        setApiLoading(true);
-        setLoading(true);
-        setLocationError(null);
-        setWeatherError(null);
-      }
-
-      try {
-        const data = await getWeatherData(location.lat, location.lon);
-
-        if (isMounted) {
-          if (data && data.timelines && Array.isArray(data.timelines)) {
-            const { timelines } = data;
-
-            // Find daily and hourly timelines
-            const dailyTimeline = timelines.find((t) => t.timestep === "1d");
-            const hourlyTimeline = timelines.find((t) => t.timestep === "1h");
-
-            if (
-              dailyTimeline &&
-              dailyTimeline.intervals &&
-              dailyTimeline.intervals.length > 0
-            ) {
-              const current = dailyTimeline.intervals[0].values;
-
-              setCurrentWeather({
-                location: location.name,
-                temperature: current.temperature || current.temperatureAvg,
-                feelsLike:
-                  current.temperatureApparent || current.temperatureApparentAvg,
-                condition: getWeatherCondition(
-                  current.weatherCode || current.weatherCodeMax
-                ),
-                windSpeed: current.windSpeed || current.windSpeedAvg,
-                humidity: current.humidity || current.humidityAvg,
-                pressure: Math.round(
-                  current.pressureSurfaceLevel ||
-                    current.pressureSurfaceLevelAvg ||
-                    1013
-                ),
-                uvIndex: Math.round(current.uvIndex || current.uvIndexMax || 0),
-              });
-            }
-
-            setHourlyData(hourlyTimeline ? hourlyTimeline.intervals : []);
-            setDailyData(dailyTimeline ? dailyTimeline.intervals : []);
-          } else {
-            setWeatherError("Could not fetch weather data. Please try again.");
-            setCurrentWeather(null);
-            setHourlyData([]);
-            setDailyData([]);
-          }
-
-          setApiLoading(false);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Weather fetch error:", error);
-        if (isMounted) {
-          setWeatherError(`Weather service error: ${error.message}`);
-          setCurrentWeather(null);
-          setHourlyData([]);
-          setDailyData([]);
-          setApiLoading(false);
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchWeather();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [location, refreshTrigger]);
+    fetchWeather(location);
+  }, [location, fetchWeather]);
 
   const handleRefresh = () => {
     setWeatherError(null);
@@ -345,18 +285,12 @@ function Home() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  const toggleDarkMode = () =>
-    updateSettings({ theme: darkMode === "dark" ? "light" : "dark" });
-  const toggleLanguage = () =>
-    updateSettings({ language: language === "mm" ? "en" : "mm" });
+  const toggleDarkMode = () => updateSettings({ theme: darkMode === "dark" ? "light" : "dark" });
+  const toggleLanguage = () => updateSettings({ language: language === "mm" ? "en" : "mm" });
 
   return (
     <div
-      className={`min-h-screen font-sans transition-colors duration-300 ${
-        darkMode === "dark"
-          ? "bg-gray-900 text-white"
-          : "bg-gray-100 text-gray-800"
-      }`}
+      className={`min-h-screen font-sans transition-colors duration-300 ${darkMode === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"}`}
     >
       <div className="container mx-auto p-4 max-w-lg">
         <div className="flex justify-between items-center mb-4">
@@ -367,36 +301,17 @@ function Home() {
             {/* Notification Status Indicator */}
             <button
               onClick={() => setShowNotificationSettings(true)}
-              className={`p-2 rounded-full hover:bg-gray-700 relative ${
-                notificationStatus === "granted"
-                  ? "text-green-500"
-                  : notificationStatus === "denied"
-                  ? "text-red-500"
-                  : "text-gray-500"
-              }`}
-              title={
-                language === "mm"
-                  ? "မိုးရွာမည့် အကြောင်းကြားချက်"
-                  : "Rain Notifications"
-              }
+              className={`p-2 rounded-full hover:bg-gray-700 relative ${notificationStatus === "granted" ? "text-green-500" : notificationStatus === "denied" ? "text-red-500" : "text-gray-500"}`}
+              title={language === "mm" ? "မိုးရွာမည့် အကြောင်းကြားချက်" : "Rain Notifications"}
             >
               {notificationStatus === "granted" ? <Bell /> : <BellOff />}
-              {rainNotificationService.getSettings().enabled &&
-                notificationStatus === "granted" && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-                )}
+              {rainNotificationService.getSettings().enabled && notificationStatus === "granted" && <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>}
             </button>
 
-            <button
-              onClick={toggleLanguage}
-              className="p-2 rounded-full hover:bg-gray-700"
-            >
+            <button onClick={toggleLanguage} className="p-2 rounded-full hover:bg-gray-700">
               {language === "mm" ? "EN" : "MM"}
             </button>
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full hover:bg-gray-700"
-            >
+            <button onClick={toggleDarkMode} className="p-2 rounded-full hover:bg-gray-700">
               {darkMode === "dark" ? <Sun /> : <Moon />}
             </button>
           </div>
@@ -411,30 +326,16 @@ function Home() {
           <button
             onClick={handleGPSRequest}
             disabled={gpsLoading || apiLoading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              usingGPS
-                ? "bg-green-600 text-white"
-                : darkMode === "dark"
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${usingGPS ? "bg-green-600 text-white" : darkMode === "dark" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-blue-500 hover:bg-blue-600 text-white"} disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <MapPin size={16} />
-            {gpsLoading
-              ? "Getting Location..."
-              : usingGPS
-              ? "Using GPS Location"
-              : "Use My Location"}
+            {gpsLoading ? "Getting Location..." : usingGPS ? "Using GPS Location" : "Use My Location"}
           </button>
 
           {usingGPS && (
             <button
               onClick={handleClearGPSData}
-              className={`px-3 py-2 rounded-lg transition-colors ${
-                darkMode === "dark"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-              }`}
+              className={`px-3 py-2 rounded-lg transition-colors ${darkMode === "dark" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-red-500 hover:bg-red-600 text-white"}`}
               title="Clear GPS data and choose new location"
             >
               ✕
@@ -444,11 +345,7 @@ function Home() {
           {/* Debug and Mock GPS buttons - for troubleshooting */}
           <button
             onClick={handleGPSDebug}
-            className={`px-3 py-2 rounded-lg transition-colors text-xs ${
-              darkMode === "dark"
-                ? "bg-gray-600 hover:bg-gray-700 text-white"
-                : "bg-gray-400 hover:bg-gray-500 text-white"
-            }`}
+            className={`px-3 py-2 rounded-lg transition-colors text-xs ${darkMode === "dark" ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white"}`}
             title="Debug GPS status"
           >
             🔍 Debug
@@ -457,11 +354,7 @@ function Home() {
           <button
             onClick={handleMockGPS}
             disabled={gpsLoading}
-            className={`px-3 py-2 rounded-lg transition-colors text-xs ${
-              darkMode === "dark"
-                ? "bg-purple-600 hover:bg-purple-700 text-white"
-                : "bg-purple-500 hover:bg-purple-600 text-white"
-            } disabled:opacity-50`}
+            className={`px-3 py-2 rounded-lg transition-colors text-xs ${darkMode === "dark" ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-purple-500 hover:bg-purple-600 text-white"} disabled:opacity-50`}
             title="Use mock GPS (Yangon) for testing"
           >
             🎭 Mock
@@ -523,44 +416,21 @@ function Home() {
             {/* GPS Status Indicator */}
             {usingGPS && currentWeather && (
               <div
-                className={`text-center p-2 rounded-lg text-sm ${
-                  darkMode === "dark"
-                    ? "bg-green-800 text-green-200"
-                    : "bg-green-100 text-green-800"
-                }`}
+                className={`text-center p-2 rounded-lg text-sm ${darkMode === "dark" ? "bg-green-800 text-green-200" : "bg-green-100 text-green-800"}`}
               >
-                📍 Using your current location • Data auto-refreshes every 30
-                minutes
+                📍 Using your current location • Data auto-refreshes every 30 minutes
               </div>
             )}
 
-            <CurrentWeatherCard
-              weather={currentWeather}
-              darkMode={darkMode === "dark"}
-            />
-            <RainCountdown
-              weatherData={hourlyData}
-              language={language}
-              darkMode={darkMode === "dark"}
-            />
-            <HourlyTimeline
-              hourlyData={hourlyData}
-              language={language}
-              darkMode={darkMode === "dark"}
-            />
-            <WeeklyForecast
-              dailyData={dailyData}
-              darkMode={darkMode === "dark"}
-            />
+            <CurrentWeatherCard weather={currentWeather} darkMode={darkMode === "dark"} />
+            <RainCountdown weatherData={hourlyData} language={language} darkMode={darkMode === "dark"} />
+            <HourlyTimeline hourlyData={hourlyData} language={language} darkMode={darkMode === "dark"} />
+            <WeeklyForecast dailyData={dailyData} darkMode={darkMode === "dark"} />
           </div>
         )}
 
         <div className="text-center mt-6">
-          <button
-            onClick={handleRefresh}
-            disabled={apiLoading}
-            className={`p-2 rounded-full ${apiLoading ? "animate-spin" : ""}`}
-          >
+          <button onClick={handleRefresh} disabled={apiLoading} className={`p-2 rounded-full ${apiLoading ? "animate-spin" : ""}`}>
             <RefreshCw />
           </button>
         </div>

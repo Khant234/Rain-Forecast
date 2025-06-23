@@ -182,6 +182,12 @@ function generateMockWeatherData(lat, lon) {
     const hour = date.getHours();
     const isNight = hour < 6 || hour > 18;
     
+    // Use a more realistic approach to determining sunrise/sunset times
+    const sunrise = new Date(date);
+    sunrise.setHours(6, 0, 0, 0); // Assume sunrise at 6 AM
+    const sunset = new Date(date);
+    sunset.setHours(18, 0, 0, 0); // Assume sunset at 6 PM
+
     mockData.data.timelines[1].intervals.push({
       "startTime": date.toISOString(),
       "values": {
@@ -196,8 +202,8 @@ function generateMockWeatherData(lat, lon) {
         "pressureSurfaceLevel": 1013,
         "uvIndex": isNight ? 0 : 6,
         "visibility": 15,
-        "sunriseTime": new Date(date.getTime() - (hour - 6) * 60 * 60 * 1000).toISOString(),
-        "sunsetTime": new Date(date.getTime() + (18 - hour) * 60 * 60 * 1000).toISOString()
+        "sunriseTime": sunrise.toISOString(),
+        "sunsetTime": sunset.toISOString()
       }
     });
   }

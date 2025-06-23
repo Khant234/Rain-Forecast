@@ -90,7 +90,7 @@ const uvIndexUtils = {
    * Get more accurate nighttime determination using sunrise/sunset if available
    */
   isNighttimeAccurate(timestamp, sunriseTime, sunsetTime) {
-    if (!sunriseTime || !sunsetTime) {
+    if (!sunriseTime && !sunsetTime) {
       return false; // If no sunrise/sunset data, don't override
     }
 
@@ -354,7 +354,7 @@ export const errorHandlers = {
     // Calculate appropriate UV index for current time
     const fallbackUVIndex = uvIndexUtils.validateUVIndex(
       5, // Default daytime UV index
-      now.toISOString(),
+      now.getTime(),
       location?.lat || 0,
       location?.lon || 0
     );
@@ -454,8 +454,7 @@ export const performanceMonitor = {
       const testData = "x".repeat(1024); // 1KB
       let available = 0;
 
-      while (available < 10 * 1024 * 1024) {
-        // Max 10MB test
+      while (available < 10 * 1024 * 1024) { // Max 10MB test
         try {
           localStorage.setItem(testKey, testData.repeat(available / 1024));
           available += 1024;

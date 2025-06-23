@@ -9,13 +9,26 @@ import {
 } from "recharts";
 import { getRainHistory } from "../services/weatherService";
 
-const RainHistory = ({ language, darkMode }) => {
+const RainHistory = ({ language, darkMode, location }) => {
   const [history, setHistory] = React.useState({});
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
-    const data = getRainHistory();
-    setHistory(data);
-  }, []);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await getRainHistory(location);
+        setHistory(data);
+      } catch (e) {
+        setError(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [location]);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -42,7 +55,7 @@ const RainHistory = ({ language, darkMode }) => {
         >
           <p className="font-medium text-xs sm:text-sm">{label}</p>
           <p className="text-[10px] sm:text-xs">
-            {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Probability"}:{" "}
+            {language === "mm" ? "မိုးရွာနိုင်ခြေ" : "Rain Probability"}:{" " "
             {Math.round(payload[0].value)}%
           </p>
         </div>
@@ -50,6 +63,14 @@ const RainHistory = ({ language, darkMode }) => {
     }
     return null;
   };
+
+  if (loading) {
+    return <div>Loading rain history...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading rain history: {error.message}</div>;
+  }
 
   return (
     <div

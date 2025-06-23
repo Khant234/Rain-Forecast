@@ -23,7 +23,13 @@ function getUserLocation() {
     } else {
       navigator.geolocation.getCurrentPosition(
         pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        err => reject('Location permission denied')
+        err => {
+          if (err.code === err.PERMISSION_DENIED) {
+            reject('Location permission denied permanently');
+          } else {
+            reject('Location permission denied');
+          }
+        }
       );
     }
   });
@@ -66,8 +72,13 @@ function showRainNotification() {
   try {
     location = await getUserLocation();
   } catch (err) {
-    alert('Location required for rain alerts.');
-    return;
+    if (err === 'Location permission denied permanently') {
+      alert('Location permission permanently denied. Rain alerts disabled.');
+      return; // Stop polling if permission is permanently denied
+    } else {
+      alert('Location required for rain alerts.');
+      return;
+    }
   }
   async function poll() {
     const rain = await checkRainForecast(location.lat, location.lon);

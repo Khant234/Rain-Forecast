@@ -56,7 +56,6 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 const weatherCache = new Map();
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // Weather API configuration
@@ -151,10 +150,10 @@ app.post('/weather', async (req, res) => {
 
     // Check API key
     if (!TOMORROW_API_KEY) {
-      console.error('Missing API key');
+      console.error('Missing Tomorrow.io API key');
       return res.status(500).json({
         error: 'Configuration error',
-        details: 'API key not configured'
+        details: 'Tomorrow.io API key not configured'
       });
     }
 
@@ -235,7 +234,7 @@ app.post('/weather', async (req, res) => {
           });
           
           const transformedData = transformOpenWeatherData(openWeatherResponse.data);
-          console.log('Successfully fetched data from OpenWeather API');
+          console.log('Successfully fetched data from OpenWeather API', transformedData);
           
           // Cache the transformed data
           cacheData(cacheKey, transformedData.data);
@@ -249,6 +248,12 @@ app.post('/weather', async (req, res) => {
             return res.json(cachedData);
           }
         }
+      } else {
+        console.error('Missing OpenWeather API key');
+        return res.status(500).json({
+          error: 'Configuration error',
+          details: 'OpenWeather API key not configured'
+        });
       }
       
       // Handle specific error cases
@@ -262,6 +267,7 @@ app.post('/weather', async (req, res) => {
         // Rate limit error
         console.warn('Rate limit hit. Using cached data if available');
         if (cachedData) {
+          console.log('Using cached data due to rate limit');
           return res.json(cachedData);
         }
         return res.status(429).json({ 

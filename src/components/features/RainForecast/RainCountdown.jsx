@@ -1,5 +1,6 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslation } from 'react-i18next';
 import WeatherAnimation from "../../common/WeatherAnimation";
 import {
   formatRainChance,
@@ -8,45 +9,19 @@ import {
 } from "../../../utils/rainChanceFormatter";
 
 const RainCountdown = ({ nextRain, language }) => {
+  const { t } = useTranslation();
+
   const formatTimeDistance = (date) => {
     try {
       return formatDistanceToNow(new Date(date), {
         addSuffix: true,
+        locale: language === 'mm' ? require('date-fns/locale/my') : undefined, // Burmese locale
       });
     } catch (error) {
       console.error("Error formatting time distance:", error);
-      return language === "mm" ? "အချိန်အတိအကျ မသိရှိရပါ" : "Time unknown";
+      return t('timeUnknown', { ns: 'rainForecast' }); // i18n key
     }
   };
-
-  const formatMessage = (timeDistance) => {
-    if (language === "mm") {
-      // Manual translation for Burmese
-      const translatedTime = timeDistance
-        .replace("about", "ခန့်")
-        .replace("in", "")
-        .replace("minute", "မိနစ်")
-        .replace("hour", "နာရီ")
-        .replace("day", "ရက်")
-        .replace("month", "လ")
-        .replace("year", "နှစ်")
-        .replace("s", "");
-      return `မိုးရွာရန် ${translatedTime} ခန့်ကျန်ပါသည်`;
-    }
-    return `Rain expected ${timeDistance}`;
-  };
-
-  if (!nextRain) {
-    return (
-      <div className="text-center p-3 sm:p-4">
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-          {language === "mm"
-            ? "လက်ရှိတွင် မိုးရွာသွန်းမှု မရှိပါ"
-            : "No rain expected at the moment"}
-        </p>
-      </div>
-    );
-  }
 
   const timeDistance = formatTimeDistance(nextRain.startTime);
 
@@ -57,7 +32,7 @@ const RainCountdown = ({ nextRain, language }) => {
       </div>
       <div className="text-center">
         <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">
-          {formatMessage(timeDistance)}
+          {t('rainExpected', { timeDistance, ns: 'rainForecast' })}
         </p>
         <p
           className={`text-xs sm:text-sm ${getRainChanceColorClass(
@@ -65,19 +40,12 @@ const RainCountdown = ({ nextRain, language }) => {
             false
           )}`}
         >
-          {language === "mm"
-            ? `မိုးရွာနိုင်ခြေ: ${formatRainChance(
+          {t('probability', { rainChance: formatRainChance(
                 nextRain.precipitationProbability,
                 language,
                 true,
                 "full"
-              )}`
-            : `Probability: ${formatRainChance(
-                nextRain.precipitationProbability,
-                language,
-                true,
-                "full"
-              )}`}
+              ), ns: 'rainForecast' })}
         </p>
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
           {getRainChanceExplanation(

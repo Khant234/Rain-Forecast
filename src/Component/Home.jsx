@@ -155,6 +155,11 @@ function Home() {
     return null;
   };
 
+  const sanitizeCityName = (cityName) => {
+    // Basic HTML escaping
+    return cityName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+
   // Store GPS location using persistent storage
   const storeLocation = (lat, lon, cityName) => {
     try {
@@ -485,7 +490,7 @@ function Home() {
                   darkMode ? "text-gray-200" : "text-gray-700"
                 }`}
               >
-                {weatherData.location}
+                {sanitizeCityName(weatherData.location)}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-2xl">

@@ -54,7 +54,7 @@ export const useWeather = () => {
         const rainEvent = {
           startTime: nextRain.startTime,
           intensity: getRainIntensity(nextRain.values.precipitationProbability),
-          duration: 30, // Default duration in minutes
+          duration: calculateRainDuration(nextRain, intervals), // Calculate rain duration
         };
         setNextRainEvent(rainEvent);
 
@@ -92,10 +92,10 @@ export const useWeather = () => {
     }
   }, [coordinates, processWeatherData]);
 
-  // Initial fetch and refresh every 5 minutes
+  // Initial fetch and refresh every 15 minutes
   useEffect(() => {
     fetchWeather();
-    const interval = setInterval(fetchWeather, 5 * 60 * 1000);
+    const interval = setInterval(fetchWeather, 15 * 60 * 1000); // Increased interval
     return () => clearInterval(interval);
   }, [fetchWeather]);
 
@@ -119,6 +119,9 @@ const getWeatherDescription = (code) => {
     4000: "Light rain",
     4001: "Rain",
     4200: "Heavy rain",
+    1001: "Fog",
+    1102: "Mostly Cloudy",
+    4201: "Heavy showers",
     // Add more mappings as needed
   };
   return descriptions[code] || "Unknown";
@@ -128,4 +131,30 @@ const getRainIntensity = (probability) => {
   if (probability >= 80) return "heavy";
   if (probability >= 50) return "moderate";
   return "light";
+};
+
+const calculateRainDuration = (rainInterval, allIntervals) => {
+  const rainStartIndex = allIntervals.indexOf(rainInterval);
+  if (rainStartIndex === -1) {
+    return 30; // Default if not found, handle error appropriately
+  }
+
+  let rainEndIndex = rainStartIndex + 1;
+  while (rainEndIndex < allIntervals.length) {
+    const interval = allIntervals[rainEndIndex];
+    if (
+      interval.values.precipitationProbability < 50 ||
+      interval.values.precipitationType === 0
+    ) {
+      break; // Found an interval where rain is not expected
+    }
+    rainEndIndex++;
+  }
+
+  const rainEndTime = new Date(
+    allIntervals[rainEndIndex - 1].startTime
+  ).getTime();
+  const rainStartTime = new Date(rainInterval.startTime).getTime();
+
+  return Math.round((rainEndTime - rainStartTime) / (1000 * 60)); // Duration in minutes
 };

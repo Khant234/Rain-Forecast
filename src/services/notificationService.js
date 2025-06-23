@@ -22,10 +22,29 @@ export class RainNotificationService {
     this.checkPermissionStatus();
   }
 
+  // Helper function to safely access localStorage
+  safeLocalStorage(operation, key, value = null) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        if (operation === 'getItem') {
+          return localStorage.getItem(key);
+        } else if (operation === 'setItem') {
+          localStorage.setItem(key, value);
+        } else if (operation === 'removeItem') {
+          localStorage.removeItem(key);
+        }
+      }
+      return null; // Or a default value suitable for getItem
+    } catch (error) {
+      console.error("Error accessing localStorage:", error);
+      return null; // Or a default value suitable for getItem
+    }
+  }
+
   // Load notification settings from localStorage
   loadSettings() {
     try {
-      const stored = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+      const stored = this.safeLocalStorage('getItem', NOTIFICATION_SETTINGS_KEY);
       return stored
         ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) }
         : DEFAULT_SETTINGS;
@@ -39,10 +58,7 @@ export class RainNotificationService {
   saveSettings(newSettings) {
     try {
       this.settings = { ...this.settings, ...newSettings };
-      localStorage.setItem(
-        NOTIFICATION_SETTINGS_KEY,
-        JSON.stringify(this.settings)
-      );
+      this.safeLocalStorage('setItem', NOTIFICATION_SETTINGS_KEY, JSON.stringify(this.settings));
       console.log("📱 Notification settings saved:", this.settings);
     } catch (error) {
       console.error("Error saving notification settings:", error);
@@ -52,7 +68,7 @@ export class RainNotificationService {
   // Load notification history
   loadNotificationHistory() {
     try {
-      const stored = localStorage.getItem(NOTIFICATION_HISTORY_KEY);
+      const stored = this.safeLocalStorage('getItem', NOTIFICATION_HISTORY_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error("Error loading notification history:", error);
@@ -73,10 +89,7 @@ export class RainNotificationService {
         this.notificationHistory = this.notificationHistory.slice(-50);
       }
 
-      localStorage.setItem(
-        NOTIFICATION_HISTORY_KEY,
-        JSON.stringify(this.notificationHistory)
-      );
+      this.safeLocalStorage('setItem', NOTIFICATION_HISTORY_KEY, JSON.stringify(this.notificationHistory));
     } catch (error) {
       console.error("Error saving notification history:", error);
     }
@@ -213,23 +226,27 @@ export class RainNotificationService {
 
   // Create notification content
   createNotificationContent(rainEvent, language = "en") {
-    const { precipitationProbability, minutesUntilRain, precipitationType } =
-      rainEvent;
+    const { precipitationProbability, minutesUntilRain, precipitationType } = rainEvent;
     const emoji = this.getWeatherEmoji(
       precipitationType,
       precipitationProbability
     );
     const timeText = this.formatTimeUntilRain(minutesUntilRain, language);
-    const advice = this.getActionableAdvice(
+    let advice = this.getActionableAdvice(
       precipitationProbability,
       minutesUntilRain,
       language
     );
 
+       // Sanitize advice to prevent XSS
+    advice = advice.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
     if (language === "mm") {
       return {
         title: `${emoji} မိုးရွာမည်ဖြစ်သည်`,
-        body: `မိုးရွာနိုင်ခြေ: ${precipitationProbability}%\n${timeText}\n${advice}`,
+        body: `မိုးရွာနိုင်ခြေ: ${precipitationProbability}%
+${timeText}
+${advice}`,
         icon: "/icons/icon-144x144.png",
         tag: "rain-alert",
         requireInteraction: true,
@@ -237,7 +254,8 @@ export class RainNotificationService {
     } else {
       return {
         title: `${emoji} Rain Alert`,
-        body: `${precipitationProbability}% chance of rain ${timeText}\n${advice}`,
+        body: `${precipitationProbability}% chance of rain ${timeText}
+${advice}`,
         icon: "/icons/icon-144x144.png",
         tag: "rain-alert",
         requireInteraction: true,
@@ -336,7 +354,7 @@ export class RainNotificationService {
   // Clear notification history
   clearHistory() {
     this.notificationHistory = [];
-    localStorage.removeItem(NOTIFICATION_HISTORY_KEY);
+    this.safeLocalStorage('removeItem', NOTIFICATION_HISTORY_KEY);
     console.log("📱 Notification history cleared");
   }
 }

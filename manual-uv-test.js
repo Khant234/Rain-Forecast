@@ -96,6 +96,7 @@ const uvTests = [
 
 let passed = 0;
 uvTests.forEach(test => {
+  const timeInfo = isNighttime(test.time, TEST_LAT, TEST_LON);
   const result = validateUVIndex(test.uv, test.time, TEST_LAT, TEST_LON);
   const timeInfo = isNighttime(test.time, TEST_LAT, TEST_LON);
   const success = result === test.expected;

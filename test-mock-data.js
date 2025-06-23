@@ -25,8 +25,8 @@ function generateMockWeatherData(lat, lon) {
                 "pressureSurfaceLevel": 1013,
                 "uvIndex": 6,
                 "visibility": 15,
-                "sunriseTime": new Date(now.getTime() + 6 * 60 * 60 * 1000).toISOString(),
-                "sunsetTime": new Date(now.getTime() + 18 * 60 * 60 * 1000).toISOString()
+                "sunriseTime": new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0).toISOString(),
+                "sunsetTime": new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0, 0).toISOString()
               }
             }
           ]
@@ -63,8 +63,8 @@ function generateMockWeatherData(lat, lon) {
         "pressureSurfaceLevel": 1013,
         "uvIndex": isNight ? 0 : 6,
         "visibility": 15,
-        "sunriseTime": new Date(date.getTime() - (hour - 6) * 60 * 60 * 1000).toISOString(),
-        "sunsetTime": new Date(date.getTime() + (18 - hour) * 60 * 60 * 1000).toISOString()
+        "sunriseTime": new Date(date.getFullYear(), date.getMonth(), date.getDate(), 6, 0, 0).toISOString(),
+        "sunsetTime": new Date(date.getFullYear(), date.getMonth(), date.getDate(), 18, 0, 0).toISOString()
       }
     });
   }
