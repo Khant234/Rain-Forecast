@@ -51,7 +51,7 @@ function getCachedData(lat, lon) {
   const exactData = cache.get(exactKey);
   if (exactData && (now - exactData.timestamp) < CACHE_DURATION) {
     cacheStats.hits++;
-    // // // console.log(`✅ Cache HIT (exact): ${lat},${lon}`);
+    // // // // console.log(`✅ Cache HIT (exact): ${lat},${lon}`);
     return { ...exactData.data, cached: true, cacheType: 'exact' };
   }
   
@@ -60,12 +60,12 @@ function getCachedData(lat, lon) {
   const gridData = cache.get(gridKey);
   if (gridData && (now - gridData.timestamp) < GRID_CACHE_DURATION) {
     cacheStats.hits++;
-    // // // console.log(`✅ Cache HIT (grid): ${lat},${lon} -> ${gridKey}`);
+    // // // // console.log(`✅ Cache HIT (grid): ${lat},${lon} -> ${gridKey}`);
     return { ...gridData.data, cached: true, cacheType: 'grid' };
   }
   
   cacheStats.misses++;
-  // // // console.log(`❌ Cache MISS: ${lat},${lon}`);
+  // // // // console.log(`❌ Cache MISS: ${lat},${lon}`);
   return null;
 }
 
@@ -89,7 +89,7 @@ function setCachedData(lat, lon, data) {
     location: { lat, lon }
   });
   
-  // // // console.log(`💾 Cached data: ${exactKey} and ${gridKey}`);
+  // // // // console.log(`💾 Cached data: ${exactKey} and ${gridKey}`);
 }
 
 // Clean expired cache entries
@@ -106,7 +106,7 @@ function cleanCache() {
   }
   
   if (cleaned > 0) {
-    // // // console.log(`🧹 Cleaned ${cleaned} expired cache entries`);
+    // // // // console.log(`🧹 Cleaned ${cleaned} expired cache entries`);
   }
 }
 
@@ -214,7 +214,7 @@ app.get("/api/weather", async (req, res) => {
     cacheStats.requests++;
 
     // Log incoming request
-    // // // console.log(`🌤️  Weather request #${cacheStats.requests}:`, { lat, lon });
+    // // // // console.log(`🌤️  Weather request #${cacheStats.requests}:`, { lat, lon });
 
     // Validate coordinates
     const latitude = parseFloat(lat);
@@ -271,14 +271,14 @@ app.get("/api/weather", async (req, res) => {
     });
 
     const url = `${TOMORROW_API_URL}?${params}`;
-    // // // console.log("🔄 API call:", url.replace(TOMORROW_API_KEY, "***"));
+    // // // // console.log("🔄 API call:", url.replace(TOMORROW_API_KEY, "***"));
 
     const response = await fetch(url);
     
     if (!response.ok) {
       if (response.status === 429) {
         // Rate limit hit - return mock data
-        // // // console.log("⚠️  Rate limit hit, returning mock weather data");
+        // // // // console.log("⚠️  Rate limit hit, returning mock weather data");
         const mockData = generateMockWeatherData(latitude, longitude);
         
         // Cache the mock data to reduce future API calls
@@ -304,7 +304,7 @@ app.get("/api/weather", async (req, res) => {
     setCachedData(latitude, longitude, data);
 
     // Log successful response
-    // // // console.log("✅ Weather data received and cached");
+    // // // // console.log("✅ Weather data received and cached");
 
     const cacheHitRate = ((cacheStats.hits / cacheStats.requests) * 100).toFixed(1);
     res.json({
@@ -399,7 +399,7 @@ app.post("/api/clear-cache", (req, res) => {
   cacheStats.requests = 0;
   cacheStats.apiCalls = 0;
   
-  // // // console.log(`🗑️  Cache cleared: ${oldSize} entries removed`);
+  // // // // console.log(`🗑️  Cache cleared: ${oldSize} entries removed`);
   
   res.json({
     message: "Cache cleared successfully",
@@ -419,9 +419,9 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, () => {
-  // // // console.log(`🚀 Weather server running on port ${port}`);
-  // // // console.log(`📊 Cache stats: http://localhost:${port}/api/cache-stats`);
-  // // // console.log(`💾 Cache duration: ${CACHE_DURATION / 60000} minutes`);
-  // // // console.log(`🌍 Grid cache: ${GRID_CACHE_DURATION / 60000} minutes (~${GRID_PRECISION * 111}km grid)`);
-  // // // console.log("Environment:", process.env.NODE_ENV || "development");
+  // // // // console.log(`🚀 Weather server running on port ${port}`);
+  // // // // console.log(`📊 Cache stats: http://localhost:${port}/api/cache-stats`);
+  // // // // console.log(`💾 Cache duration: ${CACHE_DURATION / 60000} minutes`);
+  // // // // console.log(`🌍 Grid cache: ${GRID_CACHE_DURATION / 60000} minutes (~${GRID_PRECISION * 111}km grid)`);
+  // // // // console.log("Environment:", process.env.NODE_ENV || "development");
 });
