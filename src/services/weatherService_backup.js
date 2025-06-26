@@ -1,4 +1,5 @@
 // Tomorrow.io API configuration
+// TODO: Replace this hardcoded secret with an environment variable.
 const TOMORROW_API_KEY = "WP1YfdsbDqxBeOQFU1ERgQjVhbLGZf9U";
 const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
@@ -29,7 +30,7 @@ export const fetchWeatherData = async (...args) => {
       throw new Error("Coordinates out of valid range");
     }
 
-    console.log("Fetching weather data for coordinates:", { lat, lon });
+    // console.log("Fetching weather data for coordinates:", { lat, lon });
 
     // Check if we have cached data first
     const cacheKey = getCacheKey(lat, lon, 'weather');
@@ -38,7 +39,7 @@ export const fetchWeatherData = async (...args) => {
 
     // Use cached data if it's less than 30 minutes old
     if (cachedData && (now - cachedData.timestamp < CACHE_DURATION)) {
-      console.log('Returning cached weather data');
+      // // console.log('Returning cached weather data');
       return cachedData.data;
     }
 
@@ -92,7 +93,7 @@ const fetchWeatherTimeline = async (lat, lon, timestep = '1h') => {
   
   // Return cached data if it's still valid
   if (weatherCache.data && weatherCache.timestamp && (now - weatherCache.timestamp < CACHE_DURATION)) {
-    console.log('Returning cached timeline data');
+    // console.log('Returning cached timeline data');
     return weatherCache.data.hourlyData; // Return hourly data from cache
   }
   
@@ -309,7 +310,7 @@ export const getWeatherData = async (lat, lon) => {
       // Handle rate limiting errors
       const attempts = (error.attempts || 0) + 1;
       if (attempts < 5) { // Limit to 5 attempts
-        console.log(`Retrying weather fetch (attempt ${attempts})...`);
+        // console.log(`Retrying weather fetch (attempt ${attempts})...`);
         error.attempts = attempts;
         await rateLimit(attempts);
         return getWeatherData(lat, lon);
