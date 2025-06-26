@@ -12,7 +12,7 @@ async function createFavicon() {
     .resize(32, 32)
     .toFile(path.join(__dirname, "../public/favicon.ico"));
 
-  // // console.log("Favicon created successfully!");
+  // // // console.log("Favicon created successfully!");
 }
 
 createFavicon().catch(console.error);

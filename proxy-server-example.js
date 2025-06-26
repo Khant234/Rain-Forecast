@@ -25,7 +25,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
   let cachedData = caches.exact.get(exactKey);
   if (cachedData) {
     apiCallsSaved++;
-    // // console.log(`✅ Exact cache hit! Saved calls: ${apiCallsSaved}`);
+    // // // console.log(`✅ Exact cache hit! Saved calls: ${apiCallsSaved}`);
     return res.json({ ...cachedData, cacheType: 'exact' });
   }
   
@@ -36,7 +36,7 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
   cachedData = caches.grid.get(gridKey);
   if (cachedData) {
     apiCallsSaved++;
-    // // console.log(`✅ Grid cache hit! Saved calls: ${apiCallsSaved}`);
+    // // // console.log(`✅ Grid cache hit! Saved calls: ${apiCallsSaved}`);
     caches.exact.set(exactKey, cachedData); // Promote to exact cache
     return res.json({ ...cachedData, cacheType: 'grid' });
   }
@@ -47,14 +47,14 @@ app.get('/api/weather/:lat/:lon', async (req, res) => {
   cachedData = caches.city.get(cityKey);
   if (cachedData) {
     apiCallsSaved++;
-    // // console.log(`✅ City cache hit! Saved calls: ${apiCallsSaved}`);
+    // // // console.log(`✅ City cache hit! Saved calls: ${apiCallsSaved}`);
     caches.grid.set(gridKey, cachedData); // Promote to grid cache
     caches.exact.set(exactKey, cachedData); // Promote to exact cache
     return res.json({ ...cachedData, cacheType: 'city' });
   }
   
   // No cache hit - make API call
-  // // console.log(`🔄 Making API call #${++apiCallsToday} for ${city || gridKey}`);
+  // // // console.log(`🔄 Making API call #${++apiCallsToday} for ${city || gridKey}`);
   
   try {
     const weatherData = await fetchFromTomorrowIO(numLat, numLon);
@@ -130,13 +130,13 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 setInterval(() => {
   const now = new Date();
   if (now.getHours() === 0 && now.getMinutes() === 0) {
-    // // console.log(`📊 Daily Stats: ${apiCallsToday} API calls, ${apiCallsSaved} saved`);
+    // // // console.log(`📊 Daily Stats: ${apiCallsToday} API calls, ${apiCallsSaved} saved`);
     apiCallsToday = 0;
     apiCallsSaved = 0;
   }
 }, 60000); // Check every minute
 
 app.listen(3001, () => {
-  // // console.log('🚀 Weather proxy server running on port 3001');
-  // // console.log('📊 Stats available at http://localhost:3001/api/stats');
+  // // // console.log('🚀 Weather proxy server running on port 3001');
+  // // // console.log('📊 Stats available at http://localhost:3001/api/stats');
 });
