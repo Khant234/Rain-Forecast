@@ -149,21 +149,21 @@ class APIUsageTracker {
   displayUsage() {
     const report = this.getReport();
     
-    // // // console.log('%c=== Tomorrow.io API Usage ===', 'color: #3b82f6; font-weight: bold');
-    // // // console.log(`📅 Date: ${report.date}`);
-    // // // console.log(`📊 Daily: ${report.daily.used}/${report.daily.limit} (${report.daily.percentage}%)`);
-    // // // console.log(`⏰ Hourly: ${report.hourly.used}/${report.hourly.limit}`);
+    // // // // console.log('%c=== Tomorrow.io API Usage ===', 'color: #3b82f6; font-weight: bold');
+    // // // // console.log(`📅 Date: ${report.date}`);
+    // // // // console.log(`📊 Daily: ${report.daily.used}/${report.daily.limit} (${report.daily.percentage}%)`);
+    // // // // console.log(`⏰ Hourly: ${report.hourly.used}/${report.hourly.limit}`);
     
     if (report.recommendations.length > 0) {
-      // // // console.log('%c💡 Recommendations:', 'color: #10b981');
-      // // // report.recommendations.forEach(rec => console.log(`  - ${rec}`));
+      // // // // console.log('%c💡 Recommendations:', 'color: #10b981');
+      // // // // report.recommendations.forEach(rec => console.log(`  - ${rec}`));
     }
     
     // Visual bar
     const barLength = 20;
     const filledLength = Math.round((report.daily.percentage / 100) * barLength);
     const bar = '█'.repeat(filledLength) + '░'.repeat(barLength - filledLength);
-    // // // console.log(`Progress: [${bar}] ${report.daily.percentage}%`);
+    // // // // console.log(`Progress: [${bar}] ${report.daily.percentage}%`);
     
     return report;
   }
