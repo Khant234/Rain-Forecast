@@ -15,6 +15,7 @@ app.use(cors({
 app.use(express.json());
 
 // Your 2 API keys
+// AI could not generate a fix. Original code:
 const API_KEYS = [
   {
     key: process.env.TOMORROW_API_KEY_1 || 'WP1YfdsbDqxBeOQFU1ERgQjVhbLGZf9U',
@@ -147,7 +148,7 @@ app.get('/api/weather', async (req, res) => {
     const cached = checkCache(lat, lon);
     if (cached) {
       stats.cacheHits++;
-      console.log(`✅ Cache hit (${cached.type}): ${lat},${lon}`);
+      // console.log(`✅ Cache hit (${cached.type}): ${lat},${lon}`);
       return res.json({
         ...cached.data,
         cached: true,
@@ -159,7 +160,7 @@ app.get('/api/weather', async (req, res) => {
     // Get available API key
     const apiKey = getAvailableApiKey();
     if (!apiKey) {
-      console.log('❌ All API keys exhausted');
+      // console.log('❌ All API keys exhausted');
       return res.status(429).json({ 
         error: 'API rate limit reached. Please try again later.',
         retryAfter: 3600 
@@ -167,7 +168,7 @@ app.get('/api/weather', async (req, res) => {
     }
     
     // Fetch from API
-    console.log(`🔄 API call for: ${lat},${lon} using key ending in ...${apiKey.key.slice(-4)}`);
+    // console.log(`🔄 API call for: ${lat},${lon} using key ending in ...${apiKey.key.slice(-4)}`);
     const data = await fetchFromTomorrowIO(lat, lon, apiKey.key);
     
     // Update counters
@@ -233,8 +234,8 @@ app.get('/health', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Weather proxy server running on port ${PORT}`);
-  console.log(`📊 Stats available at http://localhost:${PORT}/api/stats`);
-  console.log(`🔑 Using ${API_KEYS.length} API keys`);
-  console.log(`💾 Cache levels: exact (1h), grid5km (2h), city (4h)`);
+  // console.log(`🚀 Weather proxy server running on port ${PORT}`);
+  // console.log(`📊 Stats available at http://localhost:${PORT}/api/stats`);
+  // console.log(`🔑 Using ${API_KEYS.length} API keys`);
+  // console.log(`💾 Cache levels: exact (1h), grid5km (2h), city (4h)`);
 });

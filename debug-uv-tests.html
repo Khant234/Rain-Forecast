@@ -38,7 +38,7 @@
         }
 
         // Test 1: Timezone calculation
-        console.log('Testing timezone calculation...');
+        // console.log('Testing timezone calculation...');
         const calculatedOffset = getTimezoneOffset(TEST_LAT, TEST_LON);
         const timezoneAccurate = Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET) <= 0.1;
         addResult(
@@ -50,7 +50,8 @@ Difference: ${Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET).toFixed(1)} h
         );
 
         // Test 2: Specific time calculations
-        const testTimes = [
+        // AI could not generate a fix. Original code:
+const testTimes = [
             { utc: '2024-01-01T02:00:00Z', expectedLocal: '8:30', expectedNight: false },
             { utc: '2024-01-01T06:00:00Z', expectedLocal: '12:30', expectedNight: false },
             { utc: '2024-01-01T12:00:00Z', expectedLocal: '18:30', expectedNight: true },
@@ -102,7 +103,7 @@ Actual: ${result}`
             );
         });
 
-        console.log('Debug tests completed');
+        // console.log('Debug tests completed');
     </script>
 </body>
 </html>

@@ -18,13 +18,13 @@ function getTimezoneOffset(lat, lon) {
   for (const [region, zone] of Object.entries(timezoneAdjustments)) {
     if (lat >= zone.latMin && lat <= zone.latMax && 
         lon >= zone.lonMin && lon <= zone.lonMax) {
-      console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
+      // console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
       return zone.offset;
     }
   }
 
   const roundedOffset = Math.round(baseOffset * 2) / 2;
-  console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
+  // console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
   return roundedOffset;
 }
 
@@ -58,18 +58,19 @@ function validateUVIndex(uvIndex, timestamp, lat, lon) {
   return Math.max(0, Math.min(15, Math.round(uvIndex || 0)));
 }
 
-console.log('🧪 Manual UV Index Tests');
-console.log('========================');
+// console.log('🧪 Manual UV Index Tests');
+// console.log('========================');
 
 // Test timezone calculation
-console.log('\n📍 Timezone Test:');
+// console.log('\n📍 Timezone Test:');
 const calculatedOffset = getTimezoneOffset(TEST_LAT, TEST_LON);
-console.log(`Expected: UTC+${MYANMAR_TIMEZONE_OFFSET}`);
-console.log(`Calculated: UTC+${calculatedOffset}`);
-console.log(`Accurate: ${Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET) <= 0.1 ? '✅ PASS' : '❌ FAIL'}`);
+// console.log(`Expected: UTC+${MYANMAR_TIMEZONE_OFFSET}`);
+// console.log(`Calculated: UTC+${calculatedOffset}`);
+// console.log(`Accurate: ${Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET) <= 0.1 ? '✅ PASS' : '❌ FAIL'}`);
 
 // Test specific times
-console.log('\n🕐 Time Tests:');
+// console.log('\n🕐 Time Tests:');
+// AI could not generate a fix. Original code:
 const testTimes = [
   { utc: '2024-01-01T02:00:00Z', desc: '2:00 UTC' },
   { utc: '2024-01-01T06:00:00Z', desc: '6:00 UTC' },
@@ -77,15 +78,16 @@ const testTimes = [
   { utc: '2024-01-01T14:00:00Z', desc: '14:00 UTC' },
   { utc: '2024-01-01T18:00:00Z', desc: '18:00 UTC' },
   { utc: '2024-01-01T23:30:00Z', desc: '23:30 UTC' }
+]; '2024-01-01T23:30:00Z', desc: '23:30 UTC' }
 ];
 
 testTimes.forEach(test => {
   const timeInfo = isNighttime(test.utc, TEST_LAT, TEST_LON);
-  console.log(`${test.desc} → Local: ${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')} (${timeInfo.isNight ? 'Night' : 'Day'})`);
+  // console.log(`${test.desc} → Local: ${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')} (${timeInfo.isNight ? 'Night' : 'Day'})`);
 });
 
 // Test UV validation
-console.log('\n☀️ UV Validation Tests:');
+// console.log('\n☀️ UV Validation Tests:');
 const uvTests = [
   { time: '2024-01-01T02:00:00Z', uv: 8, expected: 8, desc: 'Day time' },
   { time: '2024-01-01T06:00:00Z', uv: 5, expected: 5, desc: 'Day time' },
@@ -101,8 +103,8 @@ uvTests.forEach(test => {
   const success = result === test.expected;
   if (success) passed++;
   
-  console.log(`${success ? '✅' : '❌'} ${test.desc}: UV ${test.uv} → ${result} (expected ${test.expected})`);
-  console.log(`   Local: ${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')} (${timeInfo.isNight ? 'Night' : 'Day'})`);
+  // console.log(`${success ? '✅' : '❌'} ${test.desc}: UV ${test.uv} → ${result} (expected ${test.expected})`);
+  // console.log(`   Local: ${timeInfo.localHour}:${timeInfo.localMinutes.toString().padStart(2, '0')} (${timeInfo.isNight ? 'Night' : 'Day'})`);
 });
 
-console.log(`\n📊 Summary: ${passed}/${uvTests.length} tests passed`);
+// console.log(`\n📊 Summary: ${passed}/${uvTests.length} tests passed`);
