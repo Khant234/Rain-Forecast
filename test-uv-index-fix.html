@@ -149,7 +149,7 @@
         isNighttime = weatherService.isNighttime;
         getTimezoneOffset = weatherService.getTimezoneOffset;
         validateUVIndex = weatherService.validateUVIndex;
-        // console.log("✅ Successfully imported weather service functions");
+        // // console.log("✅ Successfully imported weather service functions");
       } catch (error) {
         console.error("❌ Failed to import weather service functions:", error);
 
@@ -203,7 +203,7 @@
           return Math.max(0, Math.min(15, Math.round(uvIndex || 0)));
         };
 
-        // console.log("✅ Using fallback implementations");
+        // // console.log("✅ Using fallback implementations");
       }
 
       // Test configuration
@@ -556,7 +556,7 @@ Expected UV: ${expectedUV}`;
 
       // Auto-run tests on load
       setTimeout(() => {
-        // console.log("🧪 Running UV index validation tests...");
+        // // console.log("🧪 Running UV index validation tests...");
         testTimeZoneCalculation();
         testUVValidation();
         testRealTimeUV();
