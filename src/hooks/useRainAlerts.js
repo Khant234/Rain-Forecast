@@ -70,7 +70,7 @@ export const useRainAlerts = (weatherData, location, language) => {
           if (notificationSent) {
             // Mark this event as processed
             processedEventsRef.current.add(rainEvent.eventId);
-//             // // // // console.log('🌧️ Rain alert sent for event:', rainEvent);
+// //             // // // // console.log('🌧️ Rain alert sent for event:', rainEvent);
           }
         } catch (error) {
           console.error('Error sending rain notification:', error);

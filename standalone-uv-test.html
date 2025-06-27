@@ -111,14 +111,14 @@
             for (const [region, zone] of Object.entries(timezoneAdjustments)) {
                 if (lat >= zone.latMin && lat <= zone.latMax && 
                     lon >= zone.lonMin && lon <= zone.lonMax) {
-//                     // // // // console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
+// //                     // // // // console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
                     return zone.offset;
                 }
             }
 
             const baseOffset = lon / 15;
             const roundedOffset = Math.round(baseOffset * 2) / 2;
-//             // // // // console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
+// //             // // // // console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
             return roundedOffset;
         }
 
@@ -163,7 +163,7 @@
         updateCurrentTime();
 
         function runAllTests() {
-//             // // // // console.log('🧪 Running UV index validation tests...');
+// //             // // // // console.log('🧪 Running UV index validation tests...');
             
             // Test 1: Timezone Calculation
             testTimezoneCalculation();

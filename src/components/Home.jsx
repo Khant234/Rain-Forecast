@@ -125,17 +125,17 @@ function Home() {
       const gpsLocation = await requestGPSLocation();
       setCurrentLocation(gpsLocation);
       setUsingGPS(true);
-//       // // // // console.log("GPS location set:", gpsLocation);
+// //       // // // // console.log("GPS location set:", gpsLocation);
     } catch (error) {
       console.error("Primary GPS failed:", error);
 
       // Try fallback method with relaxed settings
       try {
-//         // // // // console.log("Trying fallback GPS method...");
+// //         // // // // console.log("Trying fallback GPS method...");
         const fallbackLocation = await requestGPSLocationFallback();
         setCurrentLocation(fallbackLocation);
         setUsingGPS(true);
-//         // // // // console.log("Fallback GPS location set:", fallbackLocation);
+// //         // // // // console.log("Fallback GPS location set:", fallbackLocation);
       } catch (fallbackError) {
         console.error("Fallback GPS also failed:", fallbackError);
 
@@ -158,7 +158,7 @@ function Home() {
       const mockLocation = await useMockGPS("Yangon");
       setCurrentLocation(mockLocation);
       setUsingGPS(true);
-//       // // // // console.log("Mock GPS location set:", mockLocation);
+// //       // // // // console.log("Mock GPS location set:", mockLocation);
     } catch (error) {
       console.error("Mock GPS failed:", error);
       setLocationError(`Mock GPS failed: ${error.message}`);
@@ -187,7 +187,7 @@ function Home() {
 • Hostname: ${window.location.hostname}
 • Browser: ${navigator.userAgent.split(" ")[0]}`;
 
-//       // // // // console.log(debugInfo);
+// //       // // // // console.log(debugInfo);
       alert(debugInfo);
     } catch (error) {
       console.error("GPS debug error:", error);
@@ -204,14 +204,14 @@ function Home() {
     const storedLocation =
       getStoredLocationWithPersistence() || getStoredGPSLocation();
     if (storedLocation && !location) {
-//       // // // // console.log("Found stored location, using it...");
+// //       // // // // console.log("Found stored location, using it...");
       setCurrentLocation(storedLocation);
       setUsingGPS(true);
 
       // Check if we have stored weather data for this GPS location
       const storedWeather = getStoredGPSWeather();
       if (storedWeather) {
-//         // // // // console.log("Found stored GPS weather data, using it...");
+// //         // // // // console.log("Found stored GPS weather data, using it...");
         // Process stored weather data similar to fresh data
         if (
           storedWeather &&

@@ -154,7 +154,7 @@ class StorageManager {
   }
 
   cleanupStorage() {
-//     // // // // console.log('🧹 Cleaning up storage...');
+// //     // // // // console.log('🧹 Cleaning up storage...');
     const metadata = this.getItem(STORAGE_KEYS.CACHE_METADATA) || {};
     
     // Sort by last accessed time (oldest first)
@@ -176,7 +176,7 @@ class StorageManager {
       }
     }
     
-//     // // // // console.log(`🧹 Cleaned up ${removedSize} bytes`);
+// //     // // // // console.log(`🧹 Cleaned up ${removedSize} bytes`);
   }
 }
 
@@ -200,7 +200,7 @@ export const weatherStorage = {
     
     const success = storage.setItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`, dataToStore);
     if (success) {
-//       // // // // console.log('💾 Weather data stored for:', locationKey);
+// //       // // // // console.log('💾 Weather data stored for:', locationKey);
     }
     return success;
   },
@@ -259,7 +259,7 @@ export const weatherStorage = {
       const stored = this.getWeatherData(locationKey);
       if (stored && (now - stored.timestamp) > CACHE_DURATIONS.WEATHER_DATA * 2) {
         storage.removeItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`);
-//         // // // // console.log('🗑️ Removed old weather data for:', locationKey);
+// //         // // // // console.log('🗑️ Removed old weather data for:', locationKey);
       }
     });
   }
@@ -278,7 +278,7 @@ export const locationStorage = {
     
     const success = storage.setItem(STORAGE_KEYS.LOCATION_DATA, dataToStore);
     if (success) {
-//       // // // // console.log('📍 Location data stored:', locationData.name || 'Unknown');
+// //       // // // // console.log('📍 Location data stored:', locationData.name || 'Unknown');
     }
     return success;
   },
@@ -298,7 +298,7 @@ export const locationStorage = {
 
   clearLocationData() {
     storage.removeItem(STORAGE_KEYS.LOCATION_DATA);
-//     // // // // console.log('🗑️ Location data cleared');
+// //     // // // // console.log('🗑️ Location data cleared');
   }
 };
 
@@ -336,14 +336,14 @@ export const storageUtils = {
       storage.removeItem(`${STORAGE_KEYS.WEATHER_DATA}_${locationKey}`);
     });
     
-//     // // // // console.log('🗑️ All persistent data cleared');
+// //     // // // // console.log('🗑️ All persistent data cleared');
   },
 
   performMaintenance() {
-//     // // // // console.log('🔧 Performing storage maintenance...');
+// //     // // // // console.log('🔧 Performing storage maintenance...');
     weatherStorage.clearOldWeatherData();
     storage.cleanupStorage();
-//     // // // // console.log('✅ Storage maintenance completed');
+// //     // // // // console.log('✅ Storage maintenance completed');
   }
 };
 
