@@ -88,14 +88,14 @@ const validateAndFixUVIndex = (weatherData, lat, lon) => {
       // Set UV to 0 during nighttime (6 PM - 6 AM)
       if (localHour < 6 || localHour >= 18) {
         if (originalUV > 0) {
-          // // // // console.log(`🌙 Fixed UV index: ${originalUV} → 0 (nighttime)`);
+//           // // // // console.log(`🌙 Fixed UV index: ${originalUV} → 0 (nighttime)`);
           interval.values.uvIndex = 0;
         }
       } else {
         // Validate range during daytime
         const validUV = Math.max(0, Math.min(15, Math.round(originalUV)));
         if (validUV !== originalUV) {
-          // // // // console.log(`☀️ Fixed UV index: ${originalUV} → ${validUV}`);
+//           // // // // console.log(`☀️ Fixed UV index: ${originalUV} → ${validUV}`);
           interval.values.uvIndex = validUV;
         }
       }

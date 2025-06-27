@@ -254,7 +254,7 @@ setInterval(() => {
       // Pre-fetch during low usage hours
       const hour = new Date().getHours();
       if (hour >= 2 && hour <= 5) { // 2 AM - 5 AM
-        // // // // console.log(`Pre-caching popular location: ${lat}, ${lon}`);
+//         // // // // console.log(`Pre-caching popular location: ${lat}, ${lon}`);
         // Make API call with least used key
         const apiKey = getBestApiKey();
         if (apiKey.calls.daily < apiKey.limits.daily * 0.8) {
@@ -274,6 +274,6 @@ setInterval(() => {
 }, 3600000); // Every hour
 
 app.listen(3001, () => {
-  // // // // console.log('🚀 Multi-key weather proxy running on port 3001');
-  // // // // console.log('📊 Stats: http://localhost:3001/api/stats');
+//   // // // // console.log('🚀 Multi-key weather proxy running on port 3001');
+//   // // // // console.log('📊 Stats: http://localhost:3001/api/stats');
 });

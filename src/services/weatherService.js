@@ -79,7 +79,7 @@ export const fetchWeatherData = async (...args) => {
       throw new Error("Coordinates out of valid range");
     }
 
-    // // // // console.log("Fetching weather data for coordinates:", { lat, lon });
+//     // // // // console.log("Fetching weather data for coordinates:", { lat, lon });
 
     // Check if we have cached data first
     const cacheKey = getCacheKey(lat, lon, "weather");
@@ -88,7 +88,7 @@ export const fetchWeatherData = async (...args) => {
 
     // Use cached data if it's less than 30 minutes old
     if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
-      // // // // console.log("Returning cached weather data");
+//       // // // // console.log("Returning cached weather data");
       return cachedData.data;
     }
 
@@ -145,7 +145,7 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
     weatherCache.timestamp &&
     now - weatherCache.timestamp < CACHE_DURATION
   ) {
-    // // // // console.log("Returning cached timeline data");
+//     // // // // console.log("Returning cached timeline data");
     return weatherCache.data.hourlyData; // Return hourly data from cache
   }
 
@@ -156,7 +156,7 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
       proxyRequestUrl.searchParams.append("lat", lat);
       proxyRequestUrl.searchParams.append("lon", lon);
 
-      // // // // console.log(`Fetching from proxy: ${proxyRequestUrl.toString()}`);
+//       // // // // console.log(`Fetching from proxy: ${proxyRequestUrl.toString()}`);
       const response = await fetch(proxyRequestUrl.toString(), {
         method: "GET",
         headers: {
@@ -186,7 +186,7 @@ const fetchWeatherTimeline = async (lat, lon, timestep = "1h") => {
     } catch (error) {
       console.error("Proxy error:", error);
       // Fall back to direct API if proxy fails
-      // // // // console.log("Falling back to direct API...");
+//       // // // // console.log("Falling back to direct API...");
     }
   }
 
@@ -454,7 +454,7 @@ function getClientCachedData(lat, lon) {
   const cached = clientCache.get(key);
 
   if (cached && Date.now() - cached.timestamp < CLIENT_CACHE_DURATION) {
-    // // // // console.log("✅ Client cache hit:", key);
+//     // // // // console.log("✅ Client cache hit:", key);
     return cached.data;
   }
 
@@ -480,7 +480,7 @@ function setClientCachedData(lat, lon, data) {
     }
   }
 
-  // // // // console.log("💾 Client cached:", key);
+//   // // // // console.log("💾 Client cached:", key);
 }
 
 // GPS Location Functions
@@ -514,7 +514,7 @@ export const checkGPSAvailability = async () => {
           permission.state === "denied" ? "Location permission denied" : null,
       };
     } catch (error) {
-      // // // // console.log("Permission API not available, proceeding with GPS request");
+//       // // // // console.log("Permission API not available, proceeding with GPS request");
     }
   }
 
@@ -539,7 +539,7 @@ export const requestGPSLocation = async () => {
       return;
     }
 
-    // // // // console.log("🌍 Requesting GPS location...");
+//     // // // // console.log("🌍 Requesting GPS location...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -553,7 +553,7 @@ export const requestGPSLocation = async () => {
 
         // Store GPS location in localStorage
         localStorage.setItem(GPS_LOCATION_KEY, JSON.stringify(location));
-        // // // // console.log("✅ GPS location obtained:", location);
+//         // // // // console.log("✅ GPS location obtained:", location);
         resolve(location);
       },
       (error) => {
@@ -598,7 +598,7 @@ export const requestGPSLocationFallback = async () => {
       return;
     }
 
-    // // // // console.log("🌍 Trying GPS with relaxed settings...");
+//     // // // // console.log("🌍 Trying GPS with relaxed settings...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -611,7 +611,7 @@ export const requestGPSLocationFallback = async () => {
         };
 
         localStorage.setItem(GPS_LOCATION_KEY, JSON.stringify(location));
-        // // // // console.log("✅ GPS location obtained (fallback):", location);
+//         // // // // console.log("✅ GPS location obtained (fallback):", location);
         resolve(location);
       },
       (error) => {
@@ -641,12 +641,12 @@ export const getStoredGPSLocation = () => {
     // Check if location is still valid (not older than 1 hour)
     const oneHour = 60 * 60 * 1000;
     if (Date.now() - location.timestamp > oneHour) {
-      // // // // console.log("🕐 Stored GPS location is too old, removing...");
+//       // // // // console.log("🕐 Stored GPS location is too old, removing...");
       localStorage.removeItem(GPS_LOCATION_KEY);
       return null;
     }
 
-    // // // // console.log("📍 Using stored GPS location:", location);
+//     // // // // console.log("📍 Using stored GPS location:", location);
     return location;
   } catch (error) {
     console.error("Error reading stored GPS location:", error);
@@ -664,12 +664,12 @@ export const getStoredGPSWeather = () => {
 
     // Check if weather data is still valid
     if (Date.now() - weatherData.timestamp > GPS_CACHE_DURATION) {
-      // // // // console.log("🕐 Stored GPS weather data is too old, removing...");
+//       // // // // console.log("🕐 Stored GPS weather data is too old, removing...");
       localStorage.removeItem(GPS_WEATHER_KEY);
       return null;
     }
 
-    // // // // console.log("🌤️ Using stored GPS weather data");
+//     // // // // console.log("🌤️ Using stored GPS weather data");
     return weatherData.data;
   } catch (error) {
     console.error("Error reading stored GPS weather:", error);
@@ -685,7 +685,7 @@ export const storeGPSWeather = (weatherData) => {
       timestamp: Date.now(),
     };
     localStorage.setItem(GPS_WEATHER_KEY, JSON.stringify(dataToStore));
-    // // // // console.log("💾 GPS weather data stored");
+//     // // // // console.log("💾 GPS weather data stored");
   } catch (error) {
     console.error("Error storing GPS weather data:", error);
   }
@@ -709,7 +709,7 @@ export const storeLocationWithPersistence = (locationData) => {
     );
 
     if (success) {
-      // // // // console.log("📍 Location stored with persistence:", locationData.name);
+//       // // // // console.log("📍 Location stored with persistence:", locationData.name);
     }
 
     return success;
@@ -727,14 +727,14 @@ export const getStoredLocationWithPersistence = () => {
     // Try new persistent storage first
     const persistentLocation = locationStorage.getLocationData();
     if (persistentLocation && persistentLocation.isFresh) {
-      // // // // console.log("📍 Using fresh persistent location data");
+//       // // // // console.log("📍 Using fresh persistent location data");
       return persistentLocation;
     }
 
     // Fall back to legacy storage
     const legacyLocation = getStoredGPSLocation();
     if (legacyLocation) {
-      // // // // console.log("📍 Using legacy location data");
+//       // // // // console.log("📍 Using legacy location data");
       return legacyLocation;
     }
 
@@ -748,14 +748,14 @@ export const getStoredLocationWithPersistence = () => {
 export const clearStoredGPSData = () => {
   localStorage.removeItem(GPS_LOCATION_KEY);
   localStorage.removeItem(GPS_WEATHER_KEY);
-  // // // // console.log("🗑️ GPS data cleared");
+//   // // // // console.log("🗑️ GPS data cleared");
 };
 
 /**
  * Validate and fix UV index in all cached weather data
  */
 export const validateCachedUVIndex = () => {
-  // // // // console.log("🔍 Validating UV index in all cached weather data...");
+//   // // // // console.log("🔍 Validating UV index in all cached weather data...");
 
   try {
     // Fix GPS weather data
@@ -769,7 +769,7 @@ export const validateCachedUVIndex = () => {
           gpsLocation.lon
         );
         storeGPSWeather(correctedGPSWeather);
-        // // // // console.log("✅ Fixed UV index in GPS weather data");
+//         // // // // console.log("✅ Fixed UV index in GPS weather data");
       }
     }
 
@@ -786,7 +786,7 @@ export const validateCachedUVIndex = () => {
             ...cached,
             data: correctedData,
           };
-          // // // // console.log(`✅ Fixed UV index in client cache for ${key}`);
+//           // // // // console.log(`✅ Fixed UV index in client cache for ${key}`);
         }
       }
     });
@@ -808,7 +808,7 @@ export const validateCachedUVIndex = () => {
       }
     });
 
-    // // // // console.log("✅ UV index validation completed for all cached data");
+//     // // // // console.log("✅ UV index validation completed for all cached data");
     return true;
   } catch (error) {
     console.error("❌ Error validating cached UV index:", error);
@@ -821,7 +821,7 @@ export const validateCachedUVIndex = () => {
  */
 export const initializePersistentStorage = () => {
   try {
-    // // // // console.log("🚀 Initializing persistent storage system...");
+//     // // // // console.log("🚀 Initializing persistent storage system...");
 
     // Perform storage maintenance
     storageUtils.performMaintenance();
@@ -831,14 +831,14 @@ export const initializePersistentStorage = () => {
 
     // Log storage statistics
     const storageInfo = storageUtils.getStorageInfo();
-    // // // // console.log("📊 Storage Info:", storageInfo);
+//     // // // // console.log("📊 Storage Info:", storageInfo);
 
     // Set up periodic maintenance (every 30 minutes)
     setInterval(() => {
       storageUtils.performMaintenance();
     }, 30 * 60 * 1000);
 
-    // // // // console.log("✅ Persistent storage system initialized");
+//     // // // // console.log("✅ Persistent storage system initialized");
     return true;
   } catch (error) {
     console.error("❌ Failed to initialize persistent storage:", error);
@@ -932,7 +932,7 @@ export const useMockGPS = async (cityName = "Yangon") => {
 
   // Store mock GPS location
   localStorage.setItem(GPS_LOCATION_KEY, JSON.stringify(mockGPSLocation));
-  // // // // console.log("🎭 Mock GPS location set:", mockGPSLocation);
+//   // // // // console.log("🎭 Mock GPS location set:", mockGPSLocation);
 
   return mockGPSLocation;
 };
@@ -940,19 +940,19 @@ export const useMockGPS = async (cityName = "Yangon") => {
 export const getWeatherData = async (lat, lon) => {
   const locationKey = generateLocationKey(lat, lon);
 
-  // // // // console.log(`🌤️ Weather request for: ${lat}, ${lon} (key: ${locationKey})`);
+//   // // // // console.log(`🌤️ Weather request for: ${lat}, ${lon} (key: ${locationKey})`);
 
   // Check persistent storage first
   const persistentData = weatherStorage.getWeatherData(locationKey);
   if (persistentData && persistentData.isFresh) {
-    // // // // console.log("✅ Using fresh persistent data for:", locationKey);
+//     // // // // console.log("✅ Using fresh persistent data for:", locationKey);
     return persistentData.data;
   }
 
   // Check client-side cache as fallback
   const cachedData = getClientCachedData(lat, lon);
   if (cachedData) {
-    // // // // console.log("✅ Using client cache for:", locationKey);
+//     // // // // console.log("✅ Using client cache for:", locationKey);
     return cachedData;
   }
 
@@ -998,7 +998,7 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
   // Strategy 1: Try proxy first (if enabled)
   if (API_CONFIG.useProxy || USE_PROXY) {
     try {
-      // // // // console.log("🔄 Attempting proxy request...");
+//       // // // // console.log("🔄 Attempting proxy request...");
       const proxyUrl = `/api/weather?lat=${lat}&lon=${lon}&fields=${fields.join(
         ","
       )}&timesteps=${timesteps.join(",")}&units=${units}`;
@@ -1016,13 +1016,13 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
       }
     } catch (proxyError) {
       console.warn("Proxy request failed:", proxyError.message);
-      // // // // console.log("🔄 Falling back to direct API...");
+//       // // // // console.log("🔄 Falling back to direct API...");
     }
   }
 
   // Strategy 2: Direct API call
   try {
-    // // // // console.log("🔄 Attempting direct API request...");
+//     // // // // console.log("🔄 Attempting direct API request...");
     const data = await fetchDirectAPI(lat, lon, fields, timesteps, units);
     return await processWeatherData(data, lat, lon, locationKey);
   } catch (apiError) {
@@ -1057,7 +1057,7 @@ const fetchWeatherDataWithFallback = async (lat, lon, locationKey) => {
 const fetchFreshWeatherDataWithFallback = async (lat, lon, locationKey) => {
   try {
     const freshData = await fetchWeatherDataWithFallback(lat, lon, locationKey);
-    // // // // console.log("🔄 Background refresh completed for:", locationKey);
+//     // // // // console.log("🔄 Background refresh completed for:", locationKey);
     return freshData;
   } catch (error) {
     console.error("Background fetch failed:", error);
@@ -1087,7 +1087,7 @@ const fetchDirectAPI = async (lat, lon, fields, timesteps, units) => {
   });
 
   const url = `${TOMORROW_API_URL}?${params}`;
-  // // // // console.log("🔄 Direct API call to:", url.replace(TOMORROW_API_KEY, "***"));
+//   // // // // console.log("🔄 Direct API call to:", url.replace(TOMORROW_API_KEY, "***"));
 
   const response = await fetch(url, {
     timeout: API_CONFIG.timeout,
@@ -1116,7 +1116,7 @@ const fetchDirectAPI = async (lat, lon, fields, timesteps, units) => {
   }
 
   const data = await response.json();
-  // // // // console.log("✅ Direct API data received");
+//   // // // // console.log("✅ Direct API data received");
   return data;
 };
 
@@ -1126,9 +1126,9 @@ const fetchDirectAPI = async (lat, lon, fields, timesteps, units) => {
 const processWeatherData = async (data, lat, lon, locationKey) => {
   // Log cache information if available
   if (data.cached) {
-    // // // // console.log(`🎯 Server cache hit (${data.cacheType}):`, data.cacheHitRate);
+//     // // // // console.log(`🎯 Server cache hit (${data.cacheType}):`, data.cacheHitRate);
   } else {
-    // // // // console.log("🔄 Fresh API data received");
+//     // // // // console.log("🔄 Fresh API data received");
   }
 
   // Check for the correct data structure
@@ -1214,14 +1214,14 @@ export const getTimezoneOffset = (lat, lon) => {
       lon >= zone.lonMin &&
       lon <= zone.lonMax
     ) {
-      // // // // console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
+//       // // // // console.log(`🌍 Using ${region} timezone offset: UTC+${zone.offset}`);
       return zone.offset;
     }
   }
 
   // Fall back to longitude-based calculation, rounded to nearest 0.5
   const roundedOffset = Math.round(baseOffset * 2) / 2;
-  // // // // console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
+//   // // // // console.log(`🌍 Using longitude-based timezone offset: UTC+${roundedOffset}`);
   return roundedOffset;
 };
 
@@ -1271,7 +1271,7 @@ const normalizePrecipitationData = (weatherData) => {
     return weatherData;
   }
 
-  // // // // console.log("🔧 Normalizing precipitation probability values...");
+//   // // // // console.log("🔧 Normalizing precipitation probability values...");
   let normalizedCount = 0;
 
   // Process each timeline
@@ -1317,7 +1317,7 @@ const validateAndFixUVIndex = (weatherData, lat, lon) => {
     return weatherData;
   }
 
-  // // // // console.log("🔍 Validating UV index values for location:", { lat, lon });
+//   // // // // console.log("🔍 Validating UV index values for location:", { lat, lon });
   let fixedCount = 0;
 
   // Process each timeline
@@ -1377,7 +1377,7 @@ const generateMockWeatherData = (lat, lon) => {
   const now = new Date();
   const intervals = [];
 
-  // // // // console.log(`🎭 Generating mock weather data for: ${lat}, ${lon}`);
+//   // // // // console.log(`🎭 Generating mock weather data for: ${lat}, ${lon}`);
 
   // Generate 24 hours of mock hourly data
   for (let i = 0; i < 24; i++) {
@@ -1484,7 +1484,7 @@ const generateMockWeatherData = (lat, lon) => {
     ],
   };
 
-  // // // // console.log("🎭 Generated mock weather data for:", { lat, lon });
+//   // // // // console.log("🎭 Generated mock weather data for:", { lat, lon });
   return mockData;
 };
 
@@ -1547,7 +1547,7 @@ export const geocodeCity = async (cityName) => {
     OPENCAGE_API_KEY === "your_actual_opencage_api_key_here"
   ) {
     // Use mock geocoding for common cities
-    // // // // console.log("Using mock geocoding service for:", cityName);
+//     // // // // console.log("Using mock geocoding service for:", cityName);
     return mockGeocode(cityName);
   }
 
