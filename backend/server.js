@@ -8,8 +8,8 @@ const port = process.env.PORT || 3001;
 
 // Add request logging middleware
 app.use((req, res, next) => {
-  // // // console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  // // // console.log('Request headers:', req.headers);
+  // // // // console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  // // // // console.log('Request headers:', req.headers);
   next();
 });
 
@@ -145,7 +145,7 @@ app.post('/weather', async (req, res) => {
     // Check cache first
     const cachedData = getCachedData(cacheKey);
     if (cachedData) {
-      // // // console.log('Returning cached weather data for:', { lat, lon });
+      // // // // console.log('Returning cached weather data for:', { lat, lon });
       return res.json(cachedData);
     }
 
@@ -189,8 +189,8 @@ app.post('/weather', async (req, res) => {
       timezone: "Asia/Yangon"
     };
 
-    // // // console.log('Fetching weather data for:', { lat, lon });
-    // // // console.log('API request params:', params);
+    // // // // console.log('Fetching weather data for:', { lat, lon });
+    // // // // console.log('API request params:', params);
 
     try {
       const response = await axios.get(TOMORROW_API_URL, {
@@ -202,7 +202,7 @@ app.post('/weather', async (req, res) => {
         }
       });
       
-      // // // console.log('Successfully fetched weather data');
+      // // // // console.log('Successfully fetched weather data');
       
       // Cache the data
       cacheData(cacheKey, response.data);
@@ -220,7 +220,7 @@ app.post('/weather', async (req, res) => {
       // Try OpenWeather API as fallback
       if (OPENWEATHER_API_KEY) {
         try {
-          // // // console.log('Falling back to OpenWeather API');
+          // // // // console.log('Falling back to OpenWeather API');
           const openWeatherParams = {
             lat,
             lon,
@@ -235,7 +235,7 @@ app.post('/weather', async (req, res) => {
           });
           
           const transformedData = transformOpenWeatherData(openWeatherResponse.data);
-          // // // console.log('Successfully fetched data from OpenWeather API');
+          // // // // console.log('Successfully fetched data from OpenWeather API');
           
           // Cache the transformed data
           cacheData(cacheKey, transformedData.data);
@@ -245,7 +245,7 @@ app.post('/weather', async (req, res) => {
           console.error('OpenWeather API error:', fallbackError);
           // If fallback fails, use cached data if available
           if (cachedData) {
-            // // // console.log('Using cached data as last resort');
+            // // // // console.log('Using cached data as last resort');
             return res.json(cachedData);
           }
         }
@@ -296,5 +296,5 @@ app.post('/weather', async (req, res) => {
 
 // Start server
 app.listen(port, () => {
-  // // // console.log(`Server running on port ${port}`);
+  // // // // console.log(`Server running on port ${port}`);
 });

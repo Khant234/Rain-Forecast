@@ -434,7 +434,7 @@ export const performanceMonitor = {
         )}%)`
       );
     } catch (error) {
-      // // // console.log("📊 Storage stats unavailable");
+      // // // // console.log("📊 Storage stats unavailable");
     }
   },
 
