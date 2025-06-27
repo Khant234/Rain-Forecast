@@ -173,7 +173,7 @@ function Home() {
       localStorage.setItem("weatherAppLocation", JSON.stringify(locationData));
 
       if (success) {
-        // // console.log("📍 Location stored successfully:", cityName);
+        // // // console.log("📍 Location stored successfully:", cityName);
       }
     } catch (error) {
       console.error("Error storing location:", error);
