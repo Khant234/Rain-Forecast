@@ -43,7 +43,7 @@ export class RainNotificationService {
         NOTIFICATION_SETTINGS_KEY,
         JSON.stringify(this.settings)
       );
-      // // console.log("📱 Notification settings saved:", this.settings);
+      // // // console.log("📱 Notification settings saved:", this.settings);
     } catch (error) {
       console.error("Error saving notification settings:", error);
     }
@@ -116,7 +116,7 @@ export class RainNotificationService {
       this.permissionStatus = permission;
 
       if (permission === "granted") {
-        // // console.log("✅ Notification permission granted");
+        // // // console.log("✅ Notification permission granted");
         return "granted";
       } else {
         throw new Error("Notification permission denied");
@@ -248,17 +248,17 @@ export class RainNotificationService {
   // Send rain notification
   async sendRainNotification(rainEvent) {
     if (!this.settings.enabled) {
-      // // console.log("📱 Notifications disabled");
+      // // // console.log("📱 Notifications disabled");
       return false;
     }
 
     if (this.permissionStatus !== "granted") {
-      // // console.log("📱 Notification permission not granted");
+      // // // console.log("📱 Notification permission not granted");
       return false;
     }
 
     if (!this.shouldSendNotification(rainEvent)) {
-      // // console.log("📱 Notification cooldown active");
+      // // // console.log("📱 Notification cooldown active");
       return false;
     }
 
@@ -279,7 +279,7 @@ export class RainNotificationService {
         rainEvent,
       });
 
-      // // console.log("📱 Rain notification sent:", content);
+      // // // console.log("📱 Rain notification sent:", content);
       return true;
     } catch (error) {
       console.error("Error sending notification:", error);
@@ -310,7 +310,7 @@ export class RainNotificationService {
 
     try {
       new Notification(content.title, content);
-      // // console.log("📱 Test notification sent");
+      // // // console.log("📱 Test notification sent");
       return true;
     } catch (error) {
       console.error("Error sending test notification:", error);
@@ -337,7 +337,7 @@ export class RainNotificationService {
   clearHistory() {
     this.notificationHistory = [];
     localStorage.removeItem(NOTIFICATION_HISTORY_KEY);
-    // // console.log("📱 Notification history cleared");
+    // // // console.log("📱 Notification history cleared");
   }
 }
 
