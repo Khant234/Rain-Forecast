@@ -74,24 +74,24 @@ function generateMockWeatherData(lat, lon) {
 
 // Test the function
 const testData = generateMockWeatherData(16.8409, 96.1735);
-// // // // console.log("Mock data structure test:");
-// // // // console.log("Has data:", !!testData.data);
-// // // // console.log("Has timelines:", !!testData.data.timelines);
-// // // // console.log("Timelines count:", testData.data.timelines.length);
-// // // // console.log("Daily intervals:", testData.data.timelines[0].intervals.length);
-// // // // console.log("Hourly intervals:", testData.data.timelines[1].intervals.length);
-// // // // console.log("Is mock data:", testData.mockData);
+// // // // // console.log("Mock data structure test:");
+// // // // // console.log("Has data:", !!testData.data);
+// // // // // console.log("Has timelines:", !!testData.data.timelines);
+// // // // // console.log("Timelines count:", testData.data.timelines.length);
+// // // // // console.log("Daily intervals:", testData.data.timelines[0].intervals.length);
+// // // // // console.log("Hourly intervals:", testData.data.timelines[1].intervals.length);
+// // // // // console.log("Is mock data:", testData.mockData);
 
 // Test JSON serialization
 try {
   const jsonString = JSON.stringify(testData);
-  // // // // console.log("JSON serialization: SUCCESS");
-  // // // // console.log("JSON length:", jsonString.length);
+  // // // // // console.log("JSON serialization: SUCCESS");
+  // // // // // console.log("JSON length:", jsonString.length);
   
   // Test parsing back
   const parsed = JSON.parse(jsonString);
-  // // // // console.log("JSON parsing: SUCCESS");
-  // // // // console.log("Parsed has data:", !!parsed.data);
+  // // // // // console.log("JSON parsing: SUCCESS");
+  // // // // // console.log("Parsed has data:", !!parsed.data);
 } catch (error) {
   console.error("JSON error:", error.message);
 }

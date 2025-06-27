@@ -38,42 +38,42 @@ const testWeatherData = {
 
 // Test functions
 export const testPersistentStorage = () => {
-  // // // // console.log('🧪 Testing Persistent Storage System...');
+  // // // // // console.log('🧪 Testing Persistent Storage System...');
   
   try {
     // Test 1: Storage info
-    // // // // console.log('📊 Storage Info:', storageUtils.getStorageInfo());
+    // // // // // console.log('📊 Storage Info:', storageUtils.getStorageInfo());
     
     // Test 2: Location storage
-    // // // // console.log('📍 Testing location storage...');
+    // // // // // console.log('📍 Testing location storage...');
     const locationSuccess = locationStorage.storeLocationData(testLocation);
-    // // // // console.log('Location store success:', locationSuccess);
+    // // // // // console.log('Location store success:', locationSuccess);
     
     const retrievedLocation = locationStorage.getLocationData();
-    // // // // console.log('Retrieved location:', retrievedLocation);
+    // // // // // console.log('Retrieved location:', retrievedLocation);
     
     // Test 3: Weather data storage
-    // // // // console.log('🌤️ Testing weather data storage...');
+    // // // // // console.log('🌤️ Testing weather data storage...');
     const locationKey = generateLocationKey(testLocation.lat, testLocation.lon);
     const weatherSuccess = weatherStorage.storeWeatherData(locationKey, testWeatherData);
-    // // // // console.log('Weather store success:', weatherSuccess);
+    // // // // // console.log('Weather store success:', weatherSuccess);
     
     const retrievedWeather = weatherStorage.getWeatherData(locationKey);
-    // // // // console.log('Retrieved weather:', retrievedWeather);
+    // // // // // console.log('Retrieved weather:', retrievedWeather);
     
     // Test 4: Cache freshness
-    // // // // console.log('⏰ Testing cache freshness...');
-    // // // // console.log('Weather data is fresh:', retrievedWeather?.isFresh);
-    // // // // console.log('Weather data age:', retrievedWeather?.age, 'ms');
+    // // // // // console.log('⏰ Testing cache freshness...');
+    // // // // // console.log('Weather data is fresh:', retrievedWeather?.isFresh);
+    // // // // // console.log('Weather data age:', retrievedWeather?.age, 'ms');
     
     // Test 5: All locations
-    // // // // console.log('📍 All stored locations:', weatherStorage.getAllWeatherLocations());
+    // // // // // console.log('📍 All stored locations:', weatherStorage.getAllWeatherLocations());
     
     // Test 6: Storage maintenance
-    // // // // console.log('🔧 Testing storage maintenance...');
+    // // // // // console.log('🔧 Testing storage maintenance...');
     storageUtils.performMaintenance();
     
-    // // // // console.log('✅ All tests completed successfully!');
+    // // // // // console.log('✅ All tests completed successfully!');
     
     return {
       locationStorage: { success: locationSuccess, data: retrievedLocation },
@@ -89,7 +89,7 @@ export const testPersistentStorage = () => {
 
 // Test with mock data
 export const testWithMockData = () => {
-  // // // // console.log('🎭 Testing with mock weather data...');
+  // // // // // console.log('🎭 Testing with mock weather data...');
   
   const mockWeatherData = {
     timelines: [
@@ -134,18 +134,18 @@ export const testWithMockData = () => {
   locations.forEach(location => {
     const locationKey = generateLocationKey(location.lat, location.lon);
     const success = weatherStorage.storeWeatherData(locationKey, mockWeatherData);
-    // // // // console.log(`Stored weather for ${location.name}:`, success);
+    // // // // // console.log(`Stored weather for ${location.name}:`, success);
   });
   
-  // // // // console.log('📊 Storage after mock data:', storageUtils.getStorageInfo());
-  // // // // console.log('📍 All locations:', weatherStorage.getAllWeatherLocations());
+  // // // // // console.log('📊 Storage after mock data:', storageUtils.getStorageInfo());
+  // // // // // console.log('📍 All locations:', weatherStorage.getAllWeatherLocations());
   
   return mockWeatherData;
 };
 
 // Test storage limits
 export const testStorageLimits = () => {
-  // // // // console.log('🚫 Testing storage limits...');
+  // // // // // console.log('🚫 Testing storage limits...');
   
   const largeData = {
     timelines: [{
@@ -169,7 +169,7 @@ export const testStorageLimits = () => {
   
   const locationKey = generateLocationKey(0, 0);
   const success = weatherStorage.storeWeatherData(locationKey, largeData);
-  // // // // console.log('Large data storage success:', success);
+  // // // // // console.log('Large data storage success:', success);
   
   return success;
 };
@@ -180,10 +180,10 @@ if (typeof window !== 'undefined') {
   window.testWithMockData = testWithMockData;
   window.testStorageLimits = testStorageLimits;
   
-  // // // // console.log('🧪 Persistent Storage Tests Available:');
-  // // // // console.log('- testPersistentStorage() - Basic functionality test');
-  // // // // console.log('- testWithMockData() - Test with realistic mock data');
-  // // // // console.log('- testStorageLimits() - Test storage limits and cleanup');
+  // // // // // console.log('🧪 Persistent Storage Tests Available:');
+  // // // // // console.log('- testPersistentStorage() - Basic functionality test');
+  // // // // // console.log('- testWithMockData() - Test with realistic mock data');
+  // // // // // console.log('- testStorageLimits() - Test storage limits and cleanup');
 }
 
 export default {

@@ -24,7 +24,7 @@ async function generateIcons() {
     .png()
     .toFile(path.join(__dirname, "../public/favicon.png"));
 
-  // // // // console.log("Icons generated successfully!");
+  // // // // // console.log("Icons generated successfully!");
 }
 
 generateIcons().catch(console.error);
