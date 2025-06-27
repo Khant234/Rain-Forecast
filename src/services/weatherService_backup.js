@@ -1,5 +1,5 @@
 // Tomorrow.io API configuration
-// FIXME: // FIXME: // FIXME: const TOMORROW_API_KEY = "WP1YfdsbDqxBeOQFU1ERgQjVhbLGZf9U";
+// FIXME: // FIXME: // FIXME: // FIXME: const TOMORROW_API_KEY = "WP1YfdsbDqxBeOQFU1ERgQjVhbLGZf9U";
 const TOMORROW_API_URL = "https://api.tomorrow.io/v4/timelines";
 
 export const fetchWeatherData = async (...args) => {
