@@ -38,7 +38,7 @@
         }
 
         // Test 1: Timezone calculation
-        // console.log('Testing timezone calculation...');
+        // // console.log('Testing timezone calculation...');
         const calculatedOffset = getTimezoneOffset(TEST_LAT, TEST_LON);
         const timezoneAccurate = Math.abs(calculatedOffset - MYANMAR_TIMEZONE_OFFSET) <= 0.1;
         addResult(
@@ -102,7 +102,7 @@ Actual: ${result}`
             );
         });
 
-        // console.log('Debug tests completed');
+        // // console.log('Debug tests completed');
     </script>
 </body>
 </html>
